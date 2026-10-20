@@ -1,0 +1,56 @@
+{
+    "name": "porro/statamic-connector",
+    "description": "Porro connector for Statamic: Statamic and addon versions plus settings, on top of the Laravel connector.",
+    "type": "library",
+    "license": "MIT",
+    "homepage": "https://porro.dev",
+    "keywords": [
+        "porro",
+        "statamic",
+        "laravel",
+        "monitoring"
+    ],
+    "require": {
+        "php": "^8.2",
+        "porro/laravel-connector": "^0.1",
+        "statamic/cms": "^5.0|^6.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Porro\\Statamic\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Porro\\Statamic\\StatamicConnectorServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "stable",
+    "require-dev": {
+        "orchestra/testbench": "^9.0|^10.0|^11.0",
+        "pestphp/pest": "^3.0|^4.0",
+        "laravel/pint": "^1.18"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Porro\\Statamic\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "pest",
+        "lint": "pint"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "pixelfear/composer-dist-plugin": true
+        }
+    },
+    "support": {
+        "issues": "https://github.com/Porrodev/statamic-connector/issues",
+        "source": "https://github.com/Porrodev/statamic-connector"
+    }
+}
