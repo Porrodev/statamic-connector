@@ -4,6 +4,7 @@ namespace Porro\Statamic\Tests;
 
 use Inertia\ServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
+use Porro\Core\CrontabIo;
 use Porro\Laravel\PorroServiceProvider;
 use Porro\Statamic\StatamicConnectorServiceProvider;
 use Statamic\Providers\StatamicServiceProvider;
@@ -37,5 +38,8 @@ abstract class TestCase extends Orchestra
         $app['config']->set('statamic.editions.pro', true);
         $app['config']->set('statamic.static_caching.strategy', 'half');
         $app['config']->set('statamic.git.enabled', false);
+
+        // Never touch the real crontab of whoever runs the tests.
+        $app->instance(CrontabIo::class, new FakeCrontab(works: false));
     }
 }
