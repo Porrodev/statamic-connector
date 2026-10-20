@@ -69,3 +69,11 @@ it('offers to set up cron from php please porro:connect', function () {
 
     expect($crontab->contents)->toContain('artisan schedule:run');
 });
+
+it('adds cron on its own with php please porro:cron', function () {
+    $this->app->instance(CrontabIo::class, $crontab = new FakeCrontab);
+
+    $this->artisan('statamic:porro:cron')->assertSuccessful();
+
+    expect($crontab->contents)->toContain('artisan schedule:run');
+});

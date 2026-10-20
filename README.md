@@ -9,7 +9,7 @@ composer require porro/statamic-connector
 php please porro:connect <site key>
 ```
 
-Copy the site key from the site's page in Porro. Reports then go every 15 minutes on the scheduler; see the [Laravel connector](https://github.com/Porrodev/laravel-connector) for config and commands.
+Copy the site key from the site's page in Porro. `porro:connect` offers to add the scheduler's cron line for you; if you skip it, run `php please porro:cron` on the server later. Reports then go every 15 minutes on the scheduler; see the [Laravel connector](https://github.com/Porrodev/laravel-connector) for config and commands.
 
 ## What it adds
 

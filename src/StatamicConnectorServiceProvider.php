@@ -14,7 +14,7 @@ class StatamicConnectorServiceProvider extends ServiceProvider
     public function boot(): void
     {
         if ($this->app->runningInConsole()) {
-            $this->commands([PleaseConnectCommand::class]);
+            $this->commands([PleaseConnectCommand::class, PleaseCronCommand::class]);
         }
     }
 }
