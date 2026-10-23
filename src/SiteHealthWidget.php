@@ -7,6 +7,7 @@ use Statamic\Widgets\Widget;
 
 /**
  * Dashboard: what needs attention, linking to Utilities → Site health.
+ * Shows the last result only, so the dashboard never waits on checks.
  *
  *     // config/statamic/cp.php
  *     'widgets' => [
@@ -23,6 +24,6 @@ class SiteHealthWidget extends Widget
             return '';
         }
 
-        return view('porro::widget', app(Panel::class)->data((int) $this->config('limit', 5)));
+        return view('porro::widget', app(Panel::class)->data((int) $this->config('limit', 5), cachedOnly: true));
     }
 }

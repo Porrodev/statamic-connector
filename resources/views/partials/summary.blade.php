@@ -1,3 +1,6 @@
+@if ($pending ?? false)
+    {{ __('Not checked yet. Open Site health to run the checks.') }}
+@else
 @php($attention = $counts['critical'] + $counts['warning'])
 @if ($attention > 0)
     {{ trans_choice(':count thing needs attention|:count things need attention', $attention, ['count' => $attention]) }}
@@ -8,4 +11,5 @@
 @endif
 @if ($checkedAgo)
     · {{ __('checked :ago', ['ago' => $checkedAgo]) }}
+@endif
 @endif

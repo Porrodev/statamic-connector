@@ -115,6 +115,13 @@ it('offers a dashboard widget for users who can see the utility', function () {
     $widget->setConfig(['limit' => 1]);
 
     $this->actingAs(superUser());
+
+    // The dashboard never waits on the checks: until they've run, the
+    // widget says so.
+    expect((string) $widget->html())->toContain('Not checked yet');
+    Http::assertNothingSent();
+
+    $this->get(utilityUrl());
     $html = (string) $widget->html();
 
     expect($html)->toContain('Site health')->toMatch('/See \\d+ more/')->toContain(utilityUrl());

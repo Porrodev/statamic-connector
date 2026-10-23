@@ -25,12 +25,13 @@ class Panel
 
     /**
      * @param  int|null  $limit  how many issues to list, for the widget
+     * @param  bool  $cachedOnly  never run the checks, so a dashboard never waits on the network
      * @return array<string, mixed>
      */
-    public function data(?int $limit = null): array
+    public function data(?int $limit = null, bool $cachedOnly = false): array
     {
         try {
-            $health = $this->health->get();
+            $health = $cachedOnly ? $this->health->cached() : $this->health->get();
         } catch (Throwable $e) {
             report($e);
             $health = null;
@@ -42,7 +43,8 @@ class Panel
         $all = Issue::sort(array_map(fn ($i) => Issue::fromArray($i), [...($porro['findings'] ?? []), ...($health['issues'] ?? [])]));
 
         return [
-            'failed' => $health === null,
+            'failed' => $health === null && ! $cachedOnly,
+            'pending' => $health === null && $cachedOnly,
             'connected' => (bool) ($health['connected'] ?? false),
             'enabled' => (bool) ($health['enabled'] ?? true),
             'porro' => $porro,
