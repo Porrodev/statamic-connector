@@ -4,7 +4,7 @@ Site health for Statamic 5 and 6, inside the control panel. It checks the site f
 
 It's free and works on its own. If you use [Porro](https://porro.dev) to look after your sites, connecting it adds what can only be seen from outside: uptime, SSL certificates, domain expiry and the server's operating system.
 
-![Utilities → Site health on a Statamic 6 site that isn't connected to Porro: a migration not run, the scheduler not running and three failed jobs, each with the command that fixes it](docs/images/statamic-site-health.png)
+![Utilities → Porro Site Health on a Statamic 6 site that isn't connected to Porro: a migration not run, the scheduler not running and three failed jobs, each with the command that fixes it](docs/images/statamic-site-health.png)
 
 ## Install
 
@@ -12,7 +12,7 @@ It's free and works on its own. If you use [Porro](https://porro.dev) to look af
 composer require porro/statamic-connector
 ```
 
-Then open **Utilities → Site health**. Nothing else to set up.
+Then open **Utilities → Porro Site Health**. Nothing else to set up.
 
 ### Dashboard widget
 
@@ -26,11 +26,11 @@ Add it to `config/statamic/cp.php`:
 
 It lists the five most important issues (`'limit' => 5` to change that) and links to the utility. It shows the last result rather than running the checks, so the dashboard never waits on them.
 
-<img src="docs/images/statamic-widget.png" alt="The Site health dashboard widget, listing what needs attention" width="420">
+<img src="docs/images/statamic-widget.png" alt="The Porro Site Health dashboard widget, listing what needs attention" width="420">
 
 ### Who can see it
 
-Super admins. To let other roles see it, give them **Access Site health utility** under Utilities in **Users → Roles**. The widget and the "Check again" button follow the same permission.
+Super admins. To let other roles see it, give them **Access Porro Site Health utility** under Utilities in **Users → Roles**. The widget and the "Check again" button follow the same permission.
 
 ## What it checks
 
@@ -57,7 +57,9 @@ php please porro:connect <site key>
 
 The utility then shows the site's open findings in Porro alongside the checks above, each linking to Porro.
 
-![Site health connected to Porro, in dark mode: an end-of-life server, an expiring certificate and domain, and a slow region, above the checks run on the site](docs/images/statamic-site-health-dark.png) Connecting also sends Porro a signed report every 15 minutes on Laravel's scheduler: versions, packages and the health facts above, never content, users or settings values. Run `php artisan porro:status --json` to see exactly what would be sent, and see the [Laravel connector](https://github.com/Porrodev/laravel-connector) for config and commands.
+![Porro Site Health connected to Porro, in dark mode: an end-of-life server, an expiring certificate and domain, and a slow region, above the checks run on the site](docs/images/statamic-site-health-dark.png)
+
+Connecting also sends Porro a signed report every 15 minutes on Laravel's scheduler: versions, packages and the health facts above, never content, users or settings values. Run `php artisan porro:status --json` to see exactly what would be sent, and see the [Laravel connector](https://github.com/Porrodev/laravel-connector) for config and commands.
 
 `php please porro:connect` offers to add the scheduler's cron line; `php please porro:cron` adds it on its own.
 

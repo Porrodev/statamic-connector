@@ -52,7 +52,7 @@ it('shows the site’s health without a Porro account, with the connect command'
     $html = utilityHtml($this->actingAs(superUser())->get(utilityUrl())->assertOk());
 
     expect($html)
-        ->toContain('Site health')
+        ->toContain('Porro Site Health')
         ->toContain('Checked on this site')
         ->toContain('2 updates available')
         ->toContain('Scheduler isn’t running')
@@ -125,7 +125,7 @@ it('offers a dashboard widget for users who can see the utility', function () {
     $this->get(utilityUrl());
     $html = (string) $widget->html();
 
-    expect($html)->toContain('Site health')->toMatch('/See \\d+ more/')->toContain(utilityUrl());
+    expect($html)->toContain('Porro Site Health')->toMatch('/See \\d+ more/')->toContain(utilityUrl());
 
     $this->actingAs(tap(User::make()->email('nobody@example.com'))->save());
 

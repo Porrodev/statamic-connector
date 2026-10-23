@@ -1,5 +1,5 @@
 @if ($pending ?? false)
-    {{ __('Not checked yet. Open Site health to run the checks.') }}
+    {{ __('Not checked yet. Open Porro Site Health to run the checks.') }}
 @else
 @php($attention = $counts['critical'] + $counts['warning'])
 @if ($attention > 0)

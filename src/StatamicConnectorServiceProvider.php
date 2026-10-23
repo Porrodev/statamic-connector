@@ -23,13 +23,13 @@ class StatamicConnectorServiceProvider extends ServiceProvider
             $this->commands([PleaseConnectCommand::class, PleaseCronCommand::class]);
         }
 
-        // Utilities → Site health. Statamic adds an "Access Site health
-        // utility" permission and checks it on the page and its routes;
+        // Utilities → Porro Site Health. Statamic adds an "Access Porro Site
+        // Health utility" permission and checks it on the page and its routes;
         // super admins always have it.
         Utility::extend(function () {
             Utility::register('porro')
-                ->title(__('Site health'))
-                ->navTitle(__('Site health'))
+                ->title(__('Porro Site Health'))
+                ->navTitle(__('Porro Site Health'))
                 ->icon(Panel::ICON)
                 ->description(__('Security advisories, end-of-life versions, updates and the scheduler. From Porro too, once connected.'))
                 ->view('porro::utility', fn () => app(Panel::class)->data())

@@ -2,7 +2,7 @@
 <header class="mb-6">
     @include('statamic::partials.breadcrumb', ['url' => cp_route('utilities.index'), 'title' => __('Utilities')])
     <div class="flex items-center justify-between">
-        <h1>{{ __('Site health') }}</h1>
+        <h1 class="flex items-center"><span class="h-6 w-6 mr-2 text-gray-800">{!! $icon !!}</span>{{ __('Porro Site Health') }}</h1>
         <form method="POST" action="{{ $refreshUrl }}">
             @csrf
             <button type="submit" class="btn">{{ __('Check again') }}</button>
