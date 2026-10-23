@@ -2,9 +2,11 @@
 
 namespace Porro\Statamic\Tests;
 
+use Facades\Statamic\Version;
 use Inertia\ServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 use Porro\Core\CrontabIo;
+use Porro\Core\Report;
 use Porro\Laravel\PorroServiceProvider;
 use Porro\Statamic\StatamicConnectorServiceProvider;
 use Statamic\Providers\StatamicServiceProvider;
@@ -23,6 +25,18 @@ abstract class TestCase extends Orchestra
         ]));
     }
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Statamic reads its version from the site's composer.lock, which
+        // testbench's skeleton doesn't have.
+        // The control panel's built assets aren't published here.
+        $this->withoutVite();
+
+        Version::shouldReceive('get')->andReturn(Report::installedVersion('statamic/cms'));
+    }
+
     protected function getPackageAliases($app): array
     {
         return ['Statamic' => Statamic::class];
@@ -30,7 +44,13 @@ abstract class TestCase extends Orchestra
 
     protected function defineEnvironment($app): void
     {
+        $app['config']->set('app.key', 'base64:'.base64_encode(str_repeat('k', 32)));
         $app['config']->set('database.default', 'testing');
+        // Users and roles the tests make live in a throwaway folder.
+        $users = sys_get_temp_dir().'/porro-statamic-'.getmypid();
+        $app['config']->set('statamic.stache.stores.users.directory', $users.'/users');
+        $app['config']->set('statamic.users.repositories.file.paths.roles', $users.'/roles.yaml');
+        $app['config']->set('statamic.users.repositories.file.paths.groups', $users.'/groups.yaml');
         $app['config']->set('cache.default', 'array');
         $app['config']->set('porro.url', 'https://porro.test');
         $app['config']->set('statamic.users.repository', 'file');
