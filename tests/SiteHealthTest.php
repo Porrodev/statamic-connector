@@ -3,6 +3,7 @@
 use Facades\Statamic\Updater\UpdatesOverview;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Testing\TestResponse;
+use Illuminate\View\View;
 use Porro\Statamic\SiteHealthWidget;
 use Statamic\Facades\Role;
 use Statamic\Facades\User;
@@ -35,7 +36,7 @@ function superUser()
  */
 function utilityHtml(TestResponse $response): string
 {
-    $page = $response->viewData('page');
+    $page = $response->getOriginalContent() instanceof View ? ($response->getOriginalContent()->getData()['page'] ?? null) : null;
 
     return is_array($page) ? (string) ($page['props']['html'] ?? '') : $response->getContent();
 }
