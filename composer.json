@@ -1,18 +1,23 @@
 {
     "name": "porro/statamic-connector",
-    "description": "Porro connector for Statamic: Statamic and addon versions plus settings, on top of the Laravel connector.",
+    "description": "Site health for Statamic: security advisories, end-of-life PHP, Laravel and Statamic versions, updates and the scheduler, in a control panel utility and dashboard widget. Free; connect Porro to add uptime, SSL, domain and server checks.",
     "type": "library",
     "license": "MIT",
     "homepage": "https://porro.dev",
     "keywords": [
-        "porro",
         "statamic",
-        "laravel",
-        "monitoring"
+        "statamic-addon",
+        "site health",
+        "security",
+        "advisories",
+        "end of life",
+        "updates",
+        "monitoring",
+        "porro"
     ],
     "require": {
         "php": "^8.2",
-        "porro/laravel-connector": "^0.1.8",
+        "porro/laravel-connector": "^0.2.1",
         "statamic/cms": "^5.0|^6.0"
     },
     "autoload": {
@@ -21,6 +26,10 @@
         }
     },
     "extra": {
+        "statamic": {
+            "name": "Porro Site Health",
+            "description": "Security advisories, end-of-life versions, updates and the scheduler, checked inside your site. Connect Porro for uptime, SSL, domain and server checks too."
+        },
         "laravel": {
             "providers": [
                 "Porro\\Statamic\\StatamicConnectorServiceProvider"
@@ -51,6 +60,13 @@
     },
     "support": {
         "issues": "https://github.com/Porrodev/statamic-connector/issues",
-        "source": "https://github.com/Porrodev/statamic-connector"
-    }
+        "source": "https://github.com/Porrodev/statamic-connector",
+        "docs": "https://github.com/Porrodev/statamic-connector#readme"
+    },
+    "authors": [
+        {
+            "name": "Porro",
+            "homepage": "https://porro.dev"
+        }
+    ]
 }
