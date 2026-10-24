@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+- The utility and widget check the cached result, and what came from Porro, field by field before showing it. Anything malformed is left out, and a result that can't be read shows the "couldn't run" state instead of an error page.
+- Only web links from the result become links.
+- Requires `porro/laravel-connector` 0.2.1 (requests to Porro signed for their method and path; **Check again** asks Porro again).
+
 ## 0.2.0 - 2026-10-23
 
 - **Porro Site Health**: a new utility (Utilities → Porro Site Health) and dashboard widget (`porro_site_health`). Without a Porro account it checks security advisories in `composer.lock`, PHP, Laravel and Statamic support dates, Statamic, addon and Laravel updates, the scheduler, debug mode, migrations, failed jobs, backups and health checks. Once connected, it adds the site's open Porro findings with links into Porro.
