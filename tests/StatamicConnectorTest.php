@@ -33,6 +33,13 @@ it('reports a Solo site as not Pro', function () {
     expect(statamicLayer()['data']['pro'])->toBeFalse();
 });
 
+it('sends the database block from the Laravel report', function () {
+    $database = app(Reporter::class)->build()->toArray()['database'];
+
+    expect($database)->toMatchArray(['engine' => 'sqlite', 'local' => null, 'managed' => null])
+        ->and($database['version'])->not->toBeNull();
+});
+
 it('connects with php please porro:connect', function () {
     $env = tempnam(sys_get_temp_dir(), 'env');
     file_put_contents($env, "APP_NAME=Test\n");

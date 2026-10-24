@@ -5,6 +5,7 @@
 - The utility and widget check the cached result, and what came from Porro, field by field before showing it. Anything malformed is left out, and a result that can't be read shows the "couldn't run" state instead of an error page.
 - Only web links from the result become links.
 - Requires `porro/laravel-connector` 0.2.1 (requests to Porro signed for their method and path; **Check again** asks Porro again).
+- Reports describe the site's database (engine, version, whether it's local, managed provider), through `porro/laravel-connector`, so Porro can flag an end-of-life database.
 
 ## 0.2.0 - 2026-10-23
 
