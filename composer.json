@@ -17,7 +17,7 @@
     ],
     "require": {
         "php": "^8.2",
-        "porro/laravel-connector": "^0.2.0",
+        "porro/laravel-connector": "^0.2.1",
         "statamic/cms": "^5.0|^6.0"
     },
     "autoload": {
