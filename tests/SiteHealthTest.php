@@ -1,6 +1,7 @@
 <?php
 
 use Facades\Statamic\Updater\UpdatesOverview;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Testing\TestResponse;
 use Illuminate\View\View;
@@ -102,13 +103,54 @@ it('is only for users with the Site health permission', function () {
 });
 
 it('checks again on request', function () {
+    config(['porro.key' => siteKey()]);
     $this->actingAs(superUser())->get(utilityUrl());
     $this->actingAs(superUser())->get(utilityUrl());
     $sent = count(Http::recorded());
 
     $this->actingAs(superUser())->post(cp_route('utilities.porro.refresh'))->assertRedirect(utilityUrl());
 
-    expect(count(Http::recorded()))->toBeGreaterThanOrEqual($sent);
+    // Porro is asked again; the public data keeps its own cache.
+    $recorded = Http::recorded();
+    expect(count($recorded))->toBe($sent + 1)
+        ->and($recorded->last()[0]->url())->toBe('https://porro.test/api/v1/findings');
+});
+
+it('shows what it can of a malformed result instead of breaking', function () {
+    Cache::put('porro:health:panel', [
+        'connected' => true,
+        'porro' => ['ok' => true, 'site_url' => 'javascript:alert(1)', 'findings' => 'nope'],
+        'issues' => [
+            'nope',
+            ['title' => ['nope']],
+            ['kind' => 'debug_mode', 'severity' => 'boom', 'title' => 'Debug mode is on in production', 'detail' => ['x'], 'url' => 'javascript:alert(1)', 'style' => 'x'],
+        ],
+        'counts' => ['critical' => 'lots'],
+        'checked' => 'everything',
+        'unavailable' => [['x'], 'Couldn’t reach Packagist'],
+        'checked_at' => 'yesterday-ish?',
+        'commands' => 'nope',
+    ], 300);
+
+    $html = utilityHtml($this->actingAs(superUser())->get(utilityUrl())->assertOk());
+
+    expect($html)->toContain('Debug mode is on in production')
+        ->toContain('Couldn’t reach Packagist')
+        ->not->toContain('javascript:')
+        ->not->toContain('The checks couldn’t run just now');
+
+    $widget = new SiteHealthWidget;
+    $widget->setConfig(['limit' => 3]);
+    expect((string) $widget->html())->toContain('Debug mode is on in production')->not->toContain('javascript:');
+});
+
+it('shows the unavailable state when the cached result isn’t a result at all', function () {
+    Cache::put('porro:health:panel', 'nope', 300);
+
+    $html = utilityHtml($this->actingAs(superUser())->get(utilityUrl())->assertOk());
+    expect($html)->toContain('The checks couldn’t run just now');
+
+    expect((string) (new SiteHealthWidget)->html())->toContain('Not checked yet');
 });
 
 it('offers a dashboard widget for users who can see the utility', function () {
