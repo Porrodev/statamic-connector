@@ -263,7 +263,7 @@ describe('IP details', function () {
         expect(pageHtml($this->actingAs(admin())->get(cp_route('porro.index'))))
             ->toContain(cp_route('porro.ip', '185.220.101.4'))
             // Ranked by what's known: the Tor list marks it in the table.
-            ->toMatch('/text="Tor"/');
+            ->toMatch('/text="Tor"|badge-pill-sm[^"]*">Tor</');
 
         $html = pageHtml($this->actingAs(admin())->get(cp_route('porro.ip', '185.220.101.4'))->assertOk());
 
