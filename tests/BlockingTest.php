@@ -2,11 +2,13 @@
 
 use Facades\Statamic\Updater\UpdatesOverview;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Porro\Core\Activity\Entry;
 use Porro\Core\Activity\Recorder;
 use Porro\Laravel\Activity\Activity;
+use Porro\Laravel\Activity\CloudflareMode;
 use Statamic\Facades\Role;
 use Statamic\Facades\User;
 
@@ -173,4 +175,29 @@ describe('activity on Site Health', function () {
 
         expect($html)->toContain('185.220.101.4')->not->toContain('Block 7 days');
     });
+});
+
+it('shows Cloudflare WAF mode on the Blocking page', function () {
+    $page = fn () => pageHtml($this->actingAs(admin())->get(cp_route('porro.blocking'))->assertOk());
+
+    expect($page())->toContain('Cloudflare WAF')->toContain('Not set up')->toContain('PORRO_CLOUDFLARE_TOKEN=your-token-here');
+
+    config(['porro.blocklist.cloudflare_token' => 'token']);
+    expect($page())->toContain('Token set, not connected')->toContain('php please porro:cloudflare connect');
+
+    $this->app['env'] = 'production';
+    Cache::forever(CloudflareMode::STATE, [
+        'connection' => ['zone_name' => 'dogearbooks.example'],
+        'synced_at' => time() - 120,
+        'result' => ['added' => 1, 'removed' => 0, 'shared' => 2],
+        'error' => null,
+    ]);
+    expect($page())->toContain('Synced 2 minutes ago')->toContain('zone dogearbooks.example')->toContain('2 already blocked by other sites');
+
+    Cache::forever(CloudflareMode::STATE, [
+        'connection' => ['zone_name' => 'dogearbooks.example'],
+        'error' => 'Cloudflare refused the token {{ constructor }}',
+    ]);
+    // The error comes from Cloudflare: escaped, and out of Vue's reach.
+    expect($page())->toContain('Sync failed')->toMatch('/<p v-pre[^>]*>Cloudflare refused the token \{\{ constructor \}\}<\/p>/');
 });

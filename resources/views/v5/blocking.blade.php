@@ -19,6 +19,36 @@
         <p class="text-gray-700">{{ __('Blocked IPs get a 403 before Statamic handles the request. Turn off with PORRO_BLOCK_APP=false.') }}</p>
     </div>
     <div class="p-4 border-t">
+        <p class="font-bold">Cloudflare WAF ·
+            @if (! $cloudflare['configured'])
+                <span class="text-gray-600">{{ __('Not set up') }}</span>
+            @elseif (! $cloudflare['connected'])
+                <span class="text-orange">{{ __('Token set, not connected') }}</span>
+            @elseif ($cloudflare['error'])
+                <span class="text-red-500">{{ __('Sync failed') }}</span>
+            @elseif (! $cloudflare['production'])
+                <span class="text-gray-600">{{ __('Production only') }}</span>
+            @elseif ($cloudflare['synced'])
+                <span class="text-green-600">{{ __('Synced :ago', ['ago' => $cloudflare['synced']]) }}</span>
+            @else
+                <span class="text-orange">{{ __('Waiting for the first sync') }}</span>
+            @endif
+        </p>
+        @if ($cloudflare['connected'])
+            <p class="text-gray-700">{{ __('Blocked at the edge, before traffic reaches the server · zone :zone · list porro_blocklist', ['zone' => $cloudflare['zone']]) }}@if ($cloudflare['result'] && $cloudflare['result']['shared']) · {{ trans_choice(':count already blocked by another site|:count already blocked by other sites', $cloudflare['result']['shared'], ['count' => $cloudflare['result']['shared']]) }}@endif</p>
+        @elseif ($cloudflare['configured'])
+            <p class="text-gray-700 mb-2">{{ __('Run this on the server to find the zone, create the porro_blocklist list and add the rule next to your existing ones:') }}</p>
+            <pre v-pre class="text-xs bg-gray-200 rounded p-2 overflow-x-auto">php please porro:cloudflare connect</pre>
+        @else
+            <p class="text-gray-700 mb-2">{{ __('Blocks at Cloudflare’s edge for sites behind it. Create a token with Account Filter Lists Edit, Zone WAF Edit and Zone Read, then:') }}</p>
+            <pre v-pre class="text-xs bg-gray-200 rounded p-2 overflow-x-auto">PORRO_CLOUDFLARE_TOKEN=your-token-here
+php please porro:cloudflare connect</pre>
+        @endif
+        @if ($cloudflare['error'])
+            <p v-pre class="text-red-500 mt-1">{{ $cloudflare['error'] }}</p>
+        @endif
+    </div>
+    <div class="p-4 border-t">
         <p class="font-bold">nginx ·
             @if (! $enforcement['nginx'])
                 <span class="text-gray-600">{{ __('Not set up') }}</span>

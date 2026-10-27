@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **The Blocking page shows Cloudflare WAF mode:** whether it's set up and connected, the zone, the last sync, IPs already blocked by another site on the account, and any error. Until it's connected, it shows the setup steps. Requires `porro/laravel-connector`'s Cloudflare WAF mode.
 - **Porro has its own section in the control panel nav:** **Site Health** and **Blocking**, at `/cp/porro`. The old Utilities address redirects.
 - **New permissions:** **View Porro Site Health** and **Block and safelist IP addresses**. **Access Porro Site Health utility** is no longer used, so give roles that had it **View Porro Site Health** instead.
 - **Suspicious activity on Site Health:** probes, failed logins, 404 bursts and form floods, with each flagged IP's rough country and buttons to block or safelist it. An exposed `/.env` or `/.git` shows as **Act now**.
