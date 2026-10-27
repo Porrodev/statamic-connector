@@ -91,6 +91,7 @@ class Panel
             'canManage' => self::can(self::MANAGE),
             'blockingUrl' => cp_route('porro.blocking'),
             'blockUrl' => cp_route('porro.block'),
+            'safelistUrl' => cp_route('porro.safelist'),
             'v6' => self::isStatamic6(),
             'icon' => self::ICON,
             'severities' => self::SEVERITIES,
@@ -139,6 +140,7 @@ class Panel
             'healthUrl' => cp_route('porro.index'),
             'blockingUrl' => cp_route('porro.blocking'),
             'blockUrl' => cp_route('porro.block'),
+            'safelistUrl' => cp_route('porro.safelist'),
             'reputationUrl' => cp_route('porro.reputation', $ip),
             'details' => $this->presenter->ip($ip, is_array($reputation) && ($reputation['ip'] ?? null) === $ip ? $reputation : null),
         ];

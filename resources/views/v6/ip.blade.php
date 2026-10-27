@@ -31,7 +31,7 @@
     @if ($canManage && ! $details['blocked'] && ! $details['safelisted'])
         <div class="flex flex-wrap items-center gap-2">
             @foreach ([[__('Block permanently'), 0, $details['ip'], 'primary'], [__('Block 7 days'), 7, $details['ip'], 'default'], ...($details['range'] ? [[__('Block :range', ['range' => $details['range']]), 7, $details['range'], 'default']] : [])] as [$label, $days, $target, $variant])
-                <form method="POST" action="{{ $blockUrl }}">
+                <form method="POST" action="{{ $blockUrl }}" onsubmit="return confirm({{ \Illuminate\Support\Js::from(\Porro\Laravel\Activity\Confirm::block($target, $days)) }})">
                     @csrf
                     <input type="hidden" name="ip" value="{{ $target }}">
                     <input type="hidden" name="reason" value="{{ $details['reason'] }}">
@@ -40,7 +40,12 @@
                     <ui-button type="submit" variant="{{ $variant }}" text="{{ $label }}"></ui-button>
                 </form>
             @endforeach
-            <ui-button variant="ghost" href="{{ $blockingUrl }}?safelist={{ urlencode($details['ip']) }}#safelist" text="{{ __('Safelist') }}"></ui-button>
+            <form method="POST" action="{{ $safelistUrl }}" onsubmit="return confirm({{ \Illuminate\Support\Js::from(\Porro\Laravel\Activity\Confirm::safelist($details['ip'])) }})">
+                    @csrf
+                    <input type="hidden" name="ip" value="{{ $details['ip'] }}">
+                    <input type="hidden" name="label" value="{{ __('From the IP details page') }}">
+                    <ui-button type="submit" variant="ghost" text="{{ __('Safelist') }}"></ui-button>
+                </form>
         </div>
     @endif
 

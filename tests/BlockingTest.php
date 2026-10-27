@@ -6,12 +6,14 @@ use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Js;
 use Porro\Core\Activity\AbuseIpdb;
 use Porro\Core\Activity\Entry;
 use Porro\Core\Activity\IpDetails;
 use Porro\Core\Activity\Recorder;
 use Porro\Laravel\Activity\Activity;
 use Porro\Laravel\Activity\CloudflareMode;
+use Porro\Laravel\Activity\Confirm;
 use Statamic\Facades\Role;
 use Statamic\Facades\User;
 
@@ -276,6 +278,23 @@ describe('IP details', function () {
             // Paths and user agents come from visitors: escaped, and out of Vue's reach.
             ->toMatch('/<span v-pre[^>]*>\/\{\{ constructor \}\}\.sql<\/span>/')
             ->toMatch('/<span v-pre[^>]*>Mozilla\/5\.0 \(compatible; Googlebot\/2\.1\) \{\{ constructor \}\}<\/span>/');
+    });
+
+    it('asks before every block and safelist, and safelists in one click', function () {
+        $url = cp_route('porro.ip', '185.220.101.4');
+        $html = pageHtml($this->actingAs(admin())->get($url));
+
+        expect(substr_count($html, 'onsubmit="return confirm('))->toBe(3)
+            ->and($html)->toContain(Js::from(Confirm::block('185.220.101.4'))->toHtml())
+            ->toContain(Js::from(Confirm::block('185.220.101.4', 7))->toHtml())
+            ->toContain(Js::from(Confirm::safelist('185.220.101.4'))->toHtml())
+            ->and(substr_count(pageHtml($this->actingAs(admin())->get(cp_route('porro.index'))), 'onsubmit="return confirm('))->toBe(3);
+
+        $this->actingAs(admin())->from($url)
+            ->post(cp_route('porro.safelist'), ['ip' => '185.220.101.4', 'label' => 'From the IP details page'])
+            ->assertRedirect($url);
+
+        expect(pageHtml($this->actingAs(admin())->get($url)))->toContain('safelisted')->not->toContain('onsubmit="return confirm(');
     });
 
     it('checks AbuseIPDB only when asked, and only for managers', function () {
