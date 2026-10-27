@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **IP details**, opened by clicking an IP in Site Health's activity table:
+  - **Who it is:** country, network, a verified hostname, and badges for Tor exits, Spamhaus DROP, hosting providers and research scanners.
+  - **Crawlers:** a plain note when an IP is pretending to be Googlebot (or Bing, Apple, Yandex), and when it's the real thing.
+  - **Activity:** the last 48 hours here.
+  - **Actions:** block it or its /24 (hosting networks only), or safelist it.
+  - **Reputation:** an AbuseIPDB check that runs only when clicked, and only for people who can manage the blocklist.
 - **nginx setup page**, linked from Blocking: the two one-time steps with this site's real paths, real-IP lines first behind Cloudflare.
   - **Every server:** each one's progress, checked by the server itself every minute: no file yet, include missing, waiting for reload, or loaded.
   - **Blocking page:** the nginx row now says how many servers are loaded, rather than repeating the snippets.

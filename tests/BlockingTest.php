@@ -2,10 +2,13 @@
 
 use Facades\Statamic\Updater\UpdatesOverview;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Porro\Core\Activity\AbuseIpdb;
 use Porro\Core\Activity\Entry;
+use Porro\Core\Activity\IpDetails;
 use Porro\Core\Activity\Recorder;
 use Porro\Laravel\Activity\Activity;
 use Porro\Laravel\Activity\CloudflareMode;
@@ -235,5 +238,60 @@ describe('nginx setup', function () {
     it('is for people who can see Site Health', function () {
         $this->actingAs(editorWith('access cp'))->get(cp_route('porro.nginx'))->assertForbidden();
         $this->actingAs(editorWith('view porro site health'))->get(cp_route('porro.nginx'))->assertOk();
+    });
+});
+
+describe('IP details', function () {
+    beforeEach(function () {
+        // A fresh fake: the file's catch-all stub would otherwise answer first.
+        Http::swap(new Factory);
+        Http::fake([
+            IpDetails::TOR_URL => Http::response("185.220.101.4\n"),
+            'www.spamhaus.org/*' => Http::response(''),
+            AbuseIpdb::URL.'*' => Http::response(['data' => ['abuseConfidenceScore' => 100, 'totalReports' => 2048]]),
+            '*' => Http::response([], 200),
+        ]);
+        $this->app->instance('porro.reverse-dns', fn () => null);
+        $recorder = app(Activity::class)->recorder();
+
+        foreach (['/.env', '/.git/config', '/{{ constructor }}.sql'] as $path) {
+            $recorder->record('185.220.101.4', Recorder::PROBE, 'GET', $path, 404, country: 'DE', userAgent: 'Mozilla/5.0 (compatible; Googlebot/2.1) {{ constructor }}');
+        }
+    });
+
+    it('opens from the activity table and explains a fake crawler', function () {
+        expect(pageHtml($this->actingAs(admin())->get(cp_route('porro.index'))))->toContain(cp_route('porro.ip', '185.220.101.4'));
+
+        $html = pageHtml($this->actingAs(admin())->get(cp_route('porro.ip', '185.220.101.4'))->assertOk());
+
+        expect($html)
+            ->toContain('🇩🇪 DE')
+            ->toContain('Tor exit')
+            ->toContain('Fake Googlebot')
+            ->toContain('Pretending to be Googlebot')
+            ->toContain('Block permanently')
+            // Paths and user agents come from visitors: escaped, and out of Vue's reach.
+            ->toMatch('/<span v-pre[^>]*>\/\{\{ constructor \}\}\.sql<\/span>/')
+            ->toMatch('/<span v-pre[^>]*>Mozilla\/5\.0 \(compatible; Googlebot\/2\.1\) \{\{ constructor \}\}<\/span>/');
+    });
+
+    it('checks AbuseIPDB only when asked, and only for managers', function () {
+        config(['porro.activity.abuseipdb_key' => 'k3y']);
+        $url = cp_route('porro.ip', '185.220.101.4');
+
+        expect(pageHtml($this->actingAs(admin())->get($url)))->toContain('Check on AbuseIPDB');
+        Http::assertNotSent(fn ($r) => str_contains($r->url(), 'abuseipdb'));
+
+        $this->actingAs(admin())->from($url)->post(cp_route('porro.reputation', '185.220.101.4'))->assertRedirect($url);
+        expect(pageHtml($this->actingAs(admin())->get($url)))->toContain('100%')->toContain('2,048 reports');
+
+        $viewer = editorWith('view porro site health');
+        expect(pageHtml($this->actingAs($viewer)->get($url)))->not->toContain('Check on AbuseIPDB')->not->toContain('Block permanently');
+        $this->actingAs($viewer)->post(cp_route('porro.reputation', '185.220.101.4'))->assertForbidden();
+    });
+
+    it('404s on nonsense and needs the view permission', function () {
+        $this->actingAs(admin())->get(cp_route('porro.ip', '1.2.3'))->assertNotFound();
+        $this->actingAs(editorWith('access cp'))->get(cp_route('porro.ip', '185.220.101.4'))->assertForbidden();
     });
 });

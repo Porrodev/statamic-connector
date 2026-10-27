@@ -5,6 +5,7 @@ namespace Porro\Statamic;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Porro\Statamic\Http\BlockingController;
+use Porro\Statamic\Http\IpController;
 use Porro\Statamic\Http\SiteHealthController;
 use Statamic\Facades\CP\Nav;
 use Statamic\Facades\Permission;
@@ -45,6 +46,8 @@ class StatamicConnectorServiceProvider extends ServiceProvider
             Route::prefix('porro')->name('porro.')->group(function () {
                 Route::get('/', [SiteHealthController::class, 'index'])->name('index');
                 Route::post('refresh', [SiteHealthController::class, 'refresh'])->name('refresh');
+                Route::get('activity/{ip}', [IpController::class, 'show'])->name('ip')->where('ip', '[0-9A-Fa-f:.]+');
+                Route::post('activity/{ip}/reputation', [IpController::class, 'reputation'])->name('reputation')->where('ip', '[0-9A-Fa-f:.]+');
                 Route::get('blocking', [BlockingController::class, 'index'])->name('blocking');
                 Route::get('blocking/nginx', [BlockingController::class, 'nginx'])->name('nginx');
                 Route::post('blocking/block', [BlockingController::class, 'block'])->name('block');
