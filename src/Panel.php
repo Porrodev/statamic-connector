@@ -132,7 +132,7 @@ class Panel
      */
     public function list(Request $request, string $list): array
     {
-        $entries = $this->presenter->entries($list, (string) $request->query('q', ''), (string) $request->query('filter', 'all'), (int) $request->query('page', 1));
+        $entries = $this->presenter->entries($list, ...Presenter::listQuery($request->query()));
 
         // Statamic's layout keeps its Inertia page data in $page.
         $entries['currentPage'] = $entries['page'];

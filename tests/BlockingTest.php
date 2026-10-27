@@ -391,6 +391,10 @@ describe('the full lists', function () {
             ->and(pageHtml($this->actingAs(admin())->get($url.'?q=nothing-like-this')))->toContain('Nothing matches.');
     });
 
+    it('ignores a query string that isn’t plain values', function () {
+        $this->actingAs(admin())->get(cp_route('porro.list', 'blocklist').'?q[]=x&filter[]=manual&page[]=2')->assertOk();
+    });
+
     it('has a safelist page, and is for people who can see Site Health', function () {
         expect(pageHtml($this->actingAs(admin())->get(cp_route('porro.list', 'safelist'))->assertOk()))->toContain('Nothing is safelisted.');
         $this->actingAs(editorWith('access cp'))->get(cp_route('porro.list', 'blocklist'))->assertForbidden();
