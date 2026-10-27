@@ -111,8 +111,25 @@ php please porro:cloudflare connect</pre>
 
 <h2 class="mb-2 font-bold">{{ __('Always protected') }} <span class="font-normal text-gray-600 text-sm">· {{ __('Can’t be blocked') }}</span></h2>
 <div class="card p-0 mb-6 text-sm">
-    <p class="p-4 text-gray-700">{{ __('Infrastructure that has to reach this site. Blocks that overlap these are refused, and removed if a list changes.') }}</p>
+    <p class="p-4 text-gray-700">{{ __('Addresses that have to reach this site. Blocks that overlap these are refused, and removed if a list changes. Open one to see its addresses and why.') }}</p>
     @foreach ($protected as $row)
-        <div class="px-4 py-2 border-t flex justify-between"><span>{{ $row['label'] }}</span><span class="text-gray-700">{{ trans_choice(':count range|:count ranges', $row['count'], ['count' => $row['count']]) }}</span></div>
+        <details class="px-4 py-2 border-t">
+            <summary class="flex justify-between cursor-pointer">
+                <span>{{ $row['label'] }}</span>
+                <span class="text-gray-700">{{ $row['on'] ? trans_choice(':count range|:count ranges', $row['count'], ['count' => $row['count']]) : __('Switched off') }}</span>
+            </summary>
+            <div class="mt-2 text-xs">
+                <p class="mb-2">{{ $row['why'] }}</p>
+                @if ($row['from'])
+                    <p class="text-gray-700 mb-2">{{ __('From') }}: @foreach ($row['from'] as $url)<a href="{{ $url }}" target="_blank" rel="noopener" class="text-blue">{{ parse_url($url, PHP_URL_HOST) }}{{ parse_url($url, PHP_URL_PATH) }}</a>@if (! $loop->last) · @endif @endforeach</p>
+                @endif
+                @if ($row['env'])
+                    <p class="text-gray-700 mb-2">{{ $row['on'] ? __('Not needed here? Switch it off with :setting.', ['setting' => $row['env'].'=false']) : __('Switched off with :setting. Remove it to protect these again.', ['setting' => $row['env'].'=false']) }}</p>
+                @endif
+                @if ($row['ranges'])
+                    <div v-pre class="font-mono bg-gray-200 rounded p-2" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(24ch, 1fr)); gap: 2px 16px; max-height: 240px; overflow-y: auto;">@foreach ($row['ranges'] as $range)<span>{{ $range }}</span>@endforeach</div>
+                @endif
+            </div>
+        </details>
     @endforeach
 </div>

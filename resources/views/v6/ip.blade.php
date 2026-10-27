@@ -9,6 +9,7 @@
             @if ($details['activity'] && $details['activity']['first']) · {{ __('first seen here :ago', ['ago' => $details['activity']['first']]) }} @endif
             @if ($details['blocked']) · <span style="color: rgb(220 38 38)">{{ __('blocked') }}</span> @endif
             @if ($details['safelisted']) · {{ __('safelisted') }} @endif
+            @if ($details['protected'] ?? null) · {{ __('always protected: :list', ['list' => $details['protected']]) }} @endif
         </p>
         @if ($details['badges'])
             <div class="flex flex-wrap gap-1 mt-2">
@@ -28,7 +29,7 @@
         </div>
     @endif
 
-    @if ($canManage && ! $details['blocked'] && ! $details['safelisted'])
+    @if ($canManage && ! $details['blocked'] && ! $details['safelisted'] && ! ($details['protected'] ?? null))
         <div class="flex flex-wrap items-center gap-2">
             @foreach ([[__('Block permanently'), 0, $details['ip'], 'primary'], [__('Block 7 days'), 7, $details['ip'], 'default'], ...($details['range'] ? [[__('Block :range', ['range' => $details['range']]), 7, $details['range'], 'default']] : [])] as [$label, $days, $target, $variant])
                 <form method="POST" action="{{ $blockUrl }}" data-porro-confirm="{{ \Porro\Laravel\Activity\Confirm::attribute(\Porro\Laravel\Activity\Confirm::block($target, $days)) }}">

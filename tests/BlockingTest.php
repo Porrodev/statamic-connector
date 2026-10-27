@@ -13,6 +13,7 @@ use Porro\Core\Activity\Recorder;
 use Porro\Laravel\Activity\Activity;
 use Porro\Laravel\Activity\CloudflareMode;
 use Porro\Laravel\Activity\Confirm;
+use Porro\Laravel\Activity\NginxServers;
 use Porro\Statamic\Panel;
 use Statamic\Facades\Role;
 use Statamic\Facades\User;
@@ -226,7 +227,11 @@ describe('nginx setup', function () {
         expect(pageHtml($this->actingAs(admin())->get(cp_route('porro.nginx'))->assertOk()))
             ->toContain('Set up nginx')
             ->toContain("include {$this->file};")
-            ->toContain('No server has reported yet');
+            ->toContain('1 · Turn on nginx mode')
+            ->toContain('3 · Reload nginx when the list changes')
+            ->toContain('data-porro-copy="include '.$this->file.';"')
+            ->toContain('add this line')
+            ->toContain('No server has checked in yet');
 
         $this->app['env'] = 'production';
         file_put_contents($this->dir.'/sites-enabled/site', "server {\n    include {$this->file};\n}\n");
@@ -236,6 +241,17 @@ describe('nginx setup', function () {
 
         expect(pageHtml($this->actingAs(admin())->get(cp_route('porro.nginx'))))->toContain('Loaded')->toContain('reloaded')
             ->and(pageHtml($this->actingAs(admin())->get(cp_route('porro.blocking'))))->toContain('1 of 1 server loaded')->toContain(cp_route('porro.nginx'));
+    });
+
+    it('counts each step done across servers', function () {
+        Cache::forever(NginxServers::KEY, [
+            'web-1' => ['state' => 'loaded', 'checked_at' => time() - 30, 'reloaded' => time() - 60],
+            'web-2' => ['state' => 'waiting_reload', 'checked_at' => time() - 40],
+        ]);
+
+        expect(pageHtml($this->actingAs(admin())->get(cp_route('porro.nginx'))))
+            ->toContain('Done on 2 of 2 servers')
+            ->toContain('Done on 1 of 2 servers');
     });
 
     it('is for people who can see Site Health', function () {
@@ -322,6 +338,18 @@ describe('IP details', function () {
         $this->actingAs(admin())->get(cp_route('porro.ip', '1.2.3'))->assertNotFound();
         $this->actingAs(editorWith('access cp'))->get(cp_route('porro.ip', '185.220.101.4'))->assertForbidden();
     });
+});
+
+it('opens each always-protected list to show its addresses and why, and marks protected IPs', function () {
+    expect(pageHtml($this->actingAs(admin())->get(cp_route('porro.blocking'))))
+        ->toContain('Search engine crawlers')
+        ->toContain('drop the site from search')
+        ->toContain('173.245.48.0/20')
+        ->toContain('PORRO_PROTECT_CRAWLERS=false');
+
+    expect(pageHtml($this->actingAs(admin())->get(cp_route('porro.ip', '66.249.66.1'))))
+        ->toContain('always protected: Search engine crawlers')
+        ->not->toContain('Block permanently');
 });
 
 it('hides each Statamic 6 page until Vue has compiled it, so the raw markup never flashes', function () {
