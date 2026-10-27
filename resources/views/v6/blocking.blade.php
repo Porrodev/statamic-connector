@@ -98,7 +98,7 @@ php please porro:cloudflare connect</pre>
                 </form>
             @endif
             @include('porro::v6.entries', ['entries' => $blocks, 'remove' => $urls['unblock'], 'empty' => __('Nothing is blocked.')])
-            @if ($blockCount > count($blocks))<p class="mt-3 "><a href="{{ $blocklistUrl }}" class="text-sm underline underline-offset-2">{{ __('Show all :count, with search →', ['count' => number_format($blockCount)]) }}</a></p>@elseif ($blockCount > 0)<p class="mt-3 "><a href="{{ $blocklistUrl }}" class="text-sm underline underline-offset-2">{{ __('Search the blocklist →') }}</a></p>@endif
+            @if ($blockCount > count($blocks))<p class="mt-3"><a href="{{ $blocklistUrl }}" class="text-sm underline underline-offset-2">{{ __('Show all :count, with search →', ['count' => number_format($blockCount)]) }}</a></p>@elseif ($blockCount > 0)<p class="mt-3"><a href="{{ $blocklistUrl }}" class="text-sm underline underline-offset-2">{{ __('Search the blocklist →') }}</a></p>@endif
         </ui-card>
     </ui-panel>
 
@@ -115,7 +115,7 @@ php please porro:cloudflare connect</pre>
                 </form>
             @endif
             @include('porro::v6.entries', ['entries' => $safe, 'remove' => $urls['unsafelist'], 'empty' => __('Nothing is safelisted.')])
-            @if ($safeCount > count($safe))<p class="mt-3 "><a href="{{ $safelistUrl }}" class="text-sm underline underline-offset-2">{{ __('Show all :count, with search →', ['count' => number_format($safeCount)]) }}</a></p>@endif
+            @if ($safeCount > count($safe))<p class="mt-3"><a href="{{ $safelistUrl }}" class="text-sm underline underline-offset-2">{{ __('Show all :count, with search →', ['count' => number_format($safeCount)]) }}</a></p>@endif
         </ui-card>
     </ui-panel>
 
