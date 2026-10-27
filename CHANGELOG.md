@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **Porro has its own section in the control panel nav:** **Site Health** and **Blocking**, at `/cp/porro`. The old Utilities address redirects.
+- **New permissions:** **View Porro Site Health** and **Block and safelist IP addresses**. **Access Porro Site Health utility** is no longer used, so give roles that had it **View Porro Site Health** instead.
+- **Suspicious activity on Site Health:** probes, failed logins, 404 bursts and form floods, with each flagged IP's rough country and buttons to block or safelist it. An exposed `/.env` or `/.git` shows as **Act now**.
+- **The Blocking page:** the blocklist, safelist and protected ranges. Blocks that would break the site are refused with the reason. nginx setup steps show when `PORRO_BLOCK_NGINX` is on.
+- Requires `porro/laravel-connector` 0.3. Run `php please migrate` for its blocklist tables.
+
 ## 0.2.1
 
 - The utility and widget check the cached result, and what came from Porro, field by field before showing it. Anything malformed is left out, and a result that can't be read shows the "couldn't run" state instead of an error page.

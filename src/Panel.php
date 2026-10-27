@@ -3,18 +3,27 @@
 namespace Porro\Statamic;
 
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Porro\Core\Health\Issue;
 use Porro\Core\Report;
+use Porro\Laravel\Activity\Presenter;
 use Porro\Laravel\SiteHealth;
+use Statamic\Facades\User;
 use Throwable;
 
 /**
- * The Site health utility's and widget's view data.
+ * View data for the Site Health and Blocking pages and the widget.
  */
 class Panel
 {
     // The Porro mark, so the panel always reads as Porro's.
     public const ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 1.5 18.5 10 10 18.5 1.5 10Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" fill="currentColor"/></svg>';
+
+    public const BLOCK_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.6"/><path d="m4.7 4.7 10.6 10.6" stroke="currentColor" stroke-width="1.6"/></svg>';
+
+    public const VIEW = 'view porro site health';
+
+    public const MANAGE = 'manage porro blocklist';
 
     public const SEVERITIES = [
         Issue::CRITICAL => ['label' => 'Act now', 'color' => 'red', 'hex' => '#dc2626'],
@@ -24,7 +33,19 @@ class Panel
 
     private const COMMANDS = ['connect' => 'php please porro:connect <site key>', 'cron' => 'php please porro:cron'];
 
-    public function __construct(private SiteHealth $health) {}
+    public function __construct(private SiteHealth $health, private Presenter $presenter) {}
+
+    public static function can(string $permission): bool
+    {
+        $user = User::current();
+
+        return $user !== null && ($user->isSuper() || $user->hasPermission($permission));
+    }
+
+    public static function authorize(string $permission): void
+    {
+        abort_unless(self::can($permission), 403);
+    }
 
     /**
      * @param  int|null  $limit  how many issues to list, for the widget
@@ -63,11 +84,54 @@ class Panel
             'unavailable' => $health['unavailable'] ?? [],
             'checkedAgo' => self::ago($health['checked_at'] ?? null),
             'commands' => $health['commands'] ?? self::COMMANDS,
-            'utilityUrl' => cp_route('utilities.index').'/porro',
-            'refreshUrl' => cp_route('utilities.porro.refresh'),
+            'flash' => self::flash(),
+            'utilityUrl' => cp_route('porro.index'),
+            'refreshUrl' => cp_route('porro.refresh'),
+            'activity' => $this->presenter->activity($health['activity'] ?? null),
+            'canManage' => self::can(self::MANAGE),
+            'blockingUrl' => cp_route('porro.blocking'),
+            'blockUrl' => cp_route('porro.block'),
             'v6' => self::isStatamic6(),
             'icon' => self::ICON,
             'severities' => self::SEVERITIES,
+        ];
+    }
+
+    /**
+     * The Blocking page.
+     *
+     * @return array<string, mixed>
+     */
+    public function blocking(Request $request): array
+    {
+        return [
+            'flash' => self::flash(),
+            'v6' => self::isStatamic6(),
+            'icon' => self::BLOCK_ICON,
+            'canManage' => self::can(self::MANAGE),
+            'healthUrl' => cp_route('porro.index'),
+            'urls' => [
+                'block' => cp_route('porro.block'),
+                'unblock' => cp_route('porro.unblock'),
+                'safelist' => cp_route('porro.safelist'),
+                'unsafelist' => cp_route('porro.unsafelist'),
+            ],
+            'prefill' => filter_var($request->query('safelist'), FILTER_VALIDATE_IP) ?: null,
+            ...$this->presenter->blocking(),
+        ];
+    }
+
+    /**
+     * The last action's outcome, shown on the page itself: Statamic 6
+     * doesn't toast flashed messages on Blade pages.
+     *
+     * @return array{error: string|null, success: string|null}
+     */
+    private static function flash(): array
+    {
+        return [
+            'error' => is_string(session('error')) ? session('error') : null,
+            'success' => is_string(session('success')) ? session('success') : null,
         ];
     }
 
@@ -99,6 +163,7 @@ class Panel
             ]),
             'checked' => self::strings($health['checked'] ?? []),
             'unavailable' => self::strings($health['unavailable'] ?? []),
+            'activity' => is_array($health['activity'] ?? null) ? $health['activity'] : null,
             'checked_at' => is_string($health['checked_at'] ?? null) && strtotime($health['checked_at']) !== false ? $health['checked_at'] : null,
             'commands' => [
                 'connect' => is_string($commands['connect'] ?? null) ? $commands['connect'] : self::COMMANDS['connect'],

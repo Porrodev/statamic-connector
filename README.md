@@ -12,7 +12,7 @@ It's free and works on its own. If you use [Porro](https://porro.dev) to look af
 composer require porro/statamic-connector
 ```
 
-Then open **Utilities → Porro Site Health**. Nothing else to set up.
+Then run `php please migrate` (it adds the blocklist tables) and open **Porro → Site Health** in the control panel.
 
 ### Dashboard widget
 
@@ -24,13 +24,18 @@ Add it to `config/statamic/cp.php`:
 ],
 ```
 
-It lists the five most important issues (`'limit' => 5` to change that) and links to the utility. It shows the last result rather than running the checks, so the dashboard never waits on them.
+It lists the five most important issues (`'limit' => 5` to change that) and links to Site Health. It shows the last result rather than running the checks, so the dashboard never waits on them.
 
 <img src="docs/images/statamic-widget.png" alt="The Porro Site Health dashboard widget, listing what needs attention" width="420">
 
 ### Who can see it
 
-Super admins. To let other roles see it, give them **Access Porro Site Health utility** under Utilities in **Users → Roles**. The widget and the "Check again" button follow the same permission.
+Super admins. For other roles, under **Porro** in **Users → Roles**:
+
+- **View Porro Site Health** shows both pages, the widget and the "Check again" button.
+- **Block and safelist IP addresses** adds the block, unblock and safelist buttons.
+
+Upgrading from 0.2? The old **Access Porro Site Health utility** permission isn't used any more. Give those roles **View Porro Site Health** instead.
 
 ## What it checks
 
@@ -47,6 +52,24 @@ On the site itself, with no account:
 
 Results are cached for five minutes, and the public data behind them for between six hours and a day, so the page is quick and the APIs aren't asked often. **Check again** runs everything now.
 
+## Suspicious activity and blocking
+
+Also free and on the site itself. IP addresses never leave it.
+
+- **What Site Health shows:**
+  - probes for files like `/.env` and `/.git`
+  - failed control panel logins
+  - bursts of 404s and form floods
+  - each flagged IP with its rough country, and **Block 7 days**, **Block permanently** and **Safelist** buttons
+- **Exposed files:** if `/.env` or `/.git` ever answers, that's raised as **Act now**.
+- **The Blocking page:**
+  - **Lists:** the blocklist and safelist, and the ranges that can never be blocked: Cloudflare, Laravel Forge and its health checks, private addresses.
+  - **Refusals:** a block that would take the site down is refused, with the reason. That covers those ranges, your own IP and very wide ranges.
+- **How blocks are enforced:** blocked IPs get a plain 403 before Statamic runs. With `PORRO_BLOCK_NGINX=true`, nginx can block them too, and the page shows the two setup steps for each server.
+- **Production only:** activity is recorded in production only (`PORRO_ACTIVITY=true` to record elsewhere).
+- **Static caching:** pages served from Statamic's static cache never reach the app, so traffic counts run low. Probes and logins are always caught.
+- **Country:** comes from Cloudflare when the site is behind it. Otherwise it comes from [DB-IP](https://db-ip.com)'s free country file, downloaded monthly to `storage/porro`.
+
 ## Connect Porro (optional)
 
 Porro watches every site you look after from outside: uptime from several regions, SSL and domain expiry, the server's OS and security updates, with alerts by email or Slack. It's a separate service with its own account; see [porro.dev](https://porro.dev) for plans. Nothing in this addon needs it, and nothing is sent to Porro until you connect. Add the site in Porro, then:
@@ -55,7 +78,7 @@ Porro watches every site you look after from outside: uptime from several region
 php please porro:connect <site key>
 ```
 
-The utility then shows the site's open findings in Porro alongside the checks above, each linking to Porro.
+Site Health then shows the site's open findings in Porro alongside the checks above, each linking to Porro.
 
 ![Porro Site Health connected to Porro, in dark mode: an end-of-life server, an expiring certificate and domain, and a slow region, above the checks run on the site](docs/images/statamic-site-health-dark.png)
 
@@ -75,7 +98,9 @@ Connecting also sends Porro a signed report every 15 minutes on Laravel's schedu
 | `packagist.org` | Advisory check, at most every 6 hours or when `composer.lock` changes | Package names from `composer.lock` |
 | `repo.packagist.org` | Laravel update check, at most twice a day | Nothing beyond the request |
 | `endoflife.date` | Support dates, at most once a day | Nothing beyond the request |
-| `app.porro.dev` | Only once connected: reports every 15 minutes, findings when the utility is open (cached 5 minutes) | Signed with the site key |
+| `app.porro.dev` | Only once connected: reports every 15 minutes, findings when Site Health is open (cached 5 minutes) | Signed with the site key |
+| `www.cloudflare.com`, `forge.laravel.com` | Their published IP ranges, once a day | Nothing beyond the request |
+| `download.db-ip.com` | The free country file, once a month, where activity is recorded | Nothing beyond the request |
 
 ## Support
 

@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Testing\TestResponse;
 use Illuminate\View\View;
 use Porro\Statamic\SiteHealthWidget;
+use Statamic\Facades\CP\Nav;
 use Statamic\Facades\Role;
 use Statamic\Facades\User;
 
@@ -44,7 +45,7 @@ function utilityHtml(TestResponse $response): string
 
 function utilityUrl(): string
 {
-    return cp_route('utilities.index').'/porro';
+    return cp_route('porro.index');
 }
 
 it('shows the site’s health without a Porro account, with the connect command', function () {
@@ -85,19 +86,19 @@ it('keeps text from outside out of the control panel’s Vue templates', functio
     expect($html)->toMatch('/<div v-pre[^>]*>\s*<p[^>]*>\s*(<span[^>]*>[^<]*<\/span>\s*)?Ubuntu 20.04 past security support \{\{ constructor \}\}/');
 });
 
-it('is only for users with the Site health permission', function () {
+it('is only for users with the Site Health permission', function () {
     $editor = tap(User::make()->email('editor@example.com'))->save();
     $role = tap(Role::make('editor')->addPermission('access cp'))->save();
     $editor->assignRole($role)->save();
 
     // Statamic sends users away from pages they can't open.
     expect($this->actingAs($editor)->get(utilityUrl())->status())->toBeIn([302, 403]);
-    $refresh = $this->actingAs($editor)->post(cp_route('utilities.porro.refresh'));
+    $refresh = $this->actingAs($editor)->post(cp_route('porro.refresh'));
     expect($refresh->status())->toBeIn([302, 403])
         ->and($refresh->headers->get('Location'))->not->toBe(utilityUrl());
     Http::assertNothingSent();
 
-    $role->addPermission('access porro utility')->save();
+    $role->addPermission('view porro site health')->save();
 
     $this->actingAs($editor->fresh())->get(utilityUrl())->assertOk();
 });
@@ -108,7 +109,7 @@ it('checks again on request', function () {
     $this->actingAs(superUser())->get(utilityUrl());
     $sent = count(Http::recorded());
 
-    $this->actingAs(superUser())->post(cp_route('utilities.porro.refresh'))->assertRedirect(utilityUrl());
+    $this->actingAs(superUser())->post(cp_route('porro.refresh'))->assertRedirect(utilityUrl());
 
     // Porro is asked again; the public data keeps its own cache.
     $recorded = Http::recorded();
@@ -172,4 +173,16 @@ it('offers a dashboard widget for users who can see the utility', function () {
     $this->actingAs(tap(User::make()->email('nobody@example.com'))->save());
 
     expect((string) (new SiteHealthWidget)->html())->toBe('');
+});
+
+it('keeps the old utility address working', function () {
+    $this->actingAs(superUser())->get(cp_route('utilities.index').'/porro')->assertRedirect(utilityUrl());
+});
+
+it('has its own Porro section in the nav', function () {
+    $this->actingAs(superUser());
+
+    $items = collect(Nav::build())->flatMap(fn ($section) => collect($section['items'] ?? [])->map(fn ($item) => [$section['display'] ?? null, $item->display()]));
+
+    expect($items->all())->toContain(['Porro', 'Site Health'], ['Porro', 'Blocking']);
 });
