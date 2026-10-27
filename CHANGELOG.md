@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **The activity table is ranked by what's known about each IP**, with badges next to it: Spamhaus, Tor, Cloudflare risk, Fake crawler, Hosting, or "Scanner, low risk" for research scanners, which go last.
 - **IP details**, opened by clicking an IP in Site Health's activity table:
   - **Who it is:** country, network, a verified hostname, and badges for Tor exits, Spamhaus DROP, hosting providers and research scanners.
   - **Crawlers:** a plain note when an IP is pretending to be Googlebot (or Bing, Apple, Yandex), and when it's the real thing.

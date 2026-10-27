@@ -260,7 +260,10 @@ describe('IP details', function () {
     });
 
     it('opens from the activity table and explains a fake crawler', function () {
-        expect(pageHtml($this->actingAs(admin())->get(cp_route('porro.index'))))->toContain(cp_route('porro.ip', '185.220.101.4'));
+        expect(pageHtml($this->actingAs(admin())->get(cp_route('porro.index'))))
+            ->toContain(cp_route('porro.ip', '185.220.101.4'))
+            // Ranked by what's known: the Tor list marks it in the table.
+            ->toMatch('/text="Tor"/');
 
         $html = pageHtml($this->actingAs(admin())->get(cp_route('porro.ip', '185.220.101.4'))->assertOk());
 

@@ -37,7 +37,8 @@
                 <tbody>
                     @foreach ($activity['flagged'] as $ip)
                         <tr>
-                            <td v-pre class="font-mono text-xs whitespace-nowrap"><a href="{{ cp_route('porro.ip', $ip['ip']) }}" class="text-blue hover:text-blue-800">{{ $ip['ip'] }}</a></td>
+                            <td v-pre class="font-mono text-xs whitespace-nowrap"><a href="{{ cp_route('porro.ip', $ip['ip']) }}" class="text-blue hover:text-blue-800">{{ $ip['ip'] }}</a>
+                                @foreach ($ip['badges'] as $badge)<span class="badge-pill-sm ml-1 {{ ['danger' => 'text-red-500', 'warning' => 'text-orange'][$badge['tone']] ?? '' }}">{{ $badge['label'] }}</span>@endforeach</td>
                             <td v-pre class="whitespace-nowrap" title="{{ $ip['country']['code'] ?? '' }}">{{ $ip['country']['label'] ?? '—' }}</td>
                             <td>
                                 @foreach ($ip['signals'] as $signal)
