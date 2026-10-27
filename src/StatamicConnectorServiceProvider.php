@@ -2,9 +2,12 @@
 
 namespace Porro\Statamic;
 
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Porro\Statamic\Http\BlockingController;
 use Porro\Statamic\Http\SiteHealthController;
-use Statamic\Facades\Utility;
+use Statamic\Facades\CP\Nav;
+use Statamic\Facades\Permission;
 use Statamic\Statamic;
 
 class StatamicConnectorServiceProvider extends ServiceProvider
@@ -23,19 +26,34 @@ class StatamicConnectorServiceProvider extends ServiceProvider
             $this->commands([PleaseConnectCommand::class, PleaseCronCommand::class]);
         }
 
-        // Utilities → Porro Site Health. Statamic adds an "Access Porro Site
-        // Health utility" permission and checks it on the page and its routes;
-        // super admins always have it.
-        Utility::extend(function () {
-            Utility::register('porro')
-                ->title(__('Porro Site Health'))
-                ->navTitle(__('Porro Site Health'))
-                ->icon(Panel::ICON)
-                ->description(__('Security advisories, end-of-life versions, updates and the scheduler. From Porro too, once connected.'))
-                ->view('porro::utility', fn () => app(Panel::class)->data())
-                ->routes(function ($router) {
-                    $router->post('refresh', [SiteHealthController::class, 'refresh'])->name('refresh');
-                });
+        // Its own "Porro" section in the nav, rather than tucked under
+        // Utilities: Site Health and Blocking, each behind a permission.
+        // Super admins always have both.
+        Permission::extend(function () {
+            Permission::group('porro', __('Porro'), function () {
+                Permission::register(Panel::VIEW)->label(__('View Porro Site Health'));
+                Permission::register(Panel::MANAGE)->label(__('Block and safelist IP addresses'));
+            });
+        });
+
+        Nav::extend(function ($nav) {
+            $nav->create(__('Site Health'))->section('Porro')->route('porro.index')->icon(Panel::ICON)->can(Panel::VIEW);
+            $nav->create(__('Blocking'))->section('Porro')->route('porro.blocking')->icon(Panel::BLOCK_ICON)->can(Panel::VIEW);
+        });
+
+        Statamic::pushCpRoutes(function () {
+            Route::prefix('porro')->name('porro.')->group(function () {
+                Route::get('/', [SiteHealthController::class, 'index'])->name('index');
+                Route::post('refresh', [SiteHealthController::class, 'refresh'])->name('refresh');
+                Route::get('blocking', [BlockingController::class, 'index'])->name('blocking');
+                Route::post('blocking/block', [BlockingController::class, 'block'])->name('block');
+                Route::post('blocking/unblock', [BlockingController::class, 'unblock'])->name('unblock');
+                Route::post('blocking/safelist', [BlockingController::class, 'safelist'])->name('safelist');
+                Route::post('blocking/unsafelist', [BlockingController::class, 'unsafelist'])->name('unsafelist');
+            });
+
+            // It used to be a utility: keep old bookmarks working.
+            Route::get('utilities/porro', fn () => redirect(cp_route('porro.index')));
         });
 
         SiteHealthWidget::register();

@@ -1,6 +1,5 @@
 {{-- Statamic 5: the classic control panel's own classes. --}}
 <header class="mb-6">
-    @include('statamic::partials.breadcrumb', ['url' => cp_route('utilities.index'), 'title' => __('Utilities')])
     <div class="flex items-center justify-between">
         <h1 class="flex items-center"><span class="h-6 w-6 mr-2 text-gray-800">{!! $icon !!}</span>{{ __('Porro Site Health') }}</h1>
         <form method="POST" action="{{ $refreshUrl }}">
@@ -10,6 +9,8 @@
     </div>
     <p class="text-sm text-gray-700 mt-2" role="status">@include('porro::partials.summary')</p>
 </header>
+
+@include('porro::v5.flash')
 
 @if ($failed)
     <div class="card mb-6">
@@ -45,6 +46,8 @@
     @endif
     <div class="px-4 pb-4">@include('porro::partials.checked')</div>
 </div>
+
+@includeWhen($activity, 'porro::v5.activity')
 
 @unless ($connected)
     <h2 class="mb-2 font-bold">{{ __('Watch this site from outside too') }}</h2>

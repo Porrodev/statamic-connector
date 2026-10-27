@@ -9,6 +9,8 @@
         </template>
     </ui-header>
 
+    @include('porro::v6.flash')
+
     <p class="text-sm text-gray-600 dark:text-gray-400" role="status">
         @include('porro::partials.summary')
     </p>
@@ -48,6 +50,8 @@
             @include('porro::partials.checked')
         </ui-card>
     </ui-panel>
+
+    @includeWhen($activity, 'porro::v6.activity')
 
     @unless ($connected)
         <ui-panel heading="{{ __('Watch this site from outside too') }}">

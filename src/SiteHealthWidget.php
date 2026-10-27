@@ -2,11 +2,10 @@
 
 namespace Porro\Statamic;
 
-use Statamic\Facades\User;
 use Statamic\Widgets\Widget;
 
 /**
- * Dashboard: what needs attention, linking to Utilities → Site health.
+ * Dashboard: what needs attention, linking to Porro → Site Health.
  * Shows the last result only, so the dashboard never waits on checks.
  *
  *     // config/statamic/cp.php
@@ -20,7 +19,7 @@ class SiteHealthWidget extends Widget
 
     public function html()
     {
-        if (! User::current()?->can('access porro utility')) {
+        if (! Panel::can(Panel::VIEW)) {
             return '';
         }
 

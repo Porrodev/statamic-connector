@@ -3,18 +3,34 @@
 namespace Porro\Statamic;
 
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Porro\Core\Activity\Entry;
+use Porro\Core\Activity\NginxBlocklist;
+use Porro\Core\Activity\ProtectedRanges;
+use Porro\Core\Activity\Recorder;
 use Porro\Core\Health\Issue;
 use Porro\Core\Report;
+use Porro\Laravel\Activity\Activity;
 use Porro\Laravel\SiteHealth;
+use Statamic\Facades\User;
 use Throwable;
 
 /**
- * The Site health utility's and widget's view data.
+ * View data for the Site Health and Blocking pages and the widget.
  */
 class Panel
 {
     // The Porro mark, so the panel always reads as Porro's.
     public const ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 1.5 18.5 10 10 18.5 1.5 10Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" fill="currentColor"/></svg>';
+
+    public const BLOCK_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="7.5" stroke="currentColor" stroke-width="1.6"/><path d="m4.7 4.7 10.6 10.6" stroke="currentColor" stroke-width="1.6"/></svg>';
+
+    public const VIEW = 'view porro site health';
+
+    public const MANAGE = 'manage porro blocklist';
+
+    /** How each signal reads on a chip. */
+    public const SIGNALS = [Recorder::PROBE => 'probe', Recorder::LOGIN_FAILED => 'login', Recorder::NOT_FOUND => '404', Recorder::POST_FLOOD => 'form'];
 
     public const SEVERITIES = [
         Issue::CRITICAL => ['label' => 'Act now', 'color' => 'red', 'hex' => '#dc2626'],
@@ -24,7 +40,19 @@ class Panel
 
     private const COMMANDS = ['connect' => 'php please porro:connect <site key>', 'cron' => 'php please porro:cron'];
 
-    public function __construct(private SiteHealth $health) {}
+    public function __construct(private SiteHealth $health, private Activity $activity) {}
+
+    public static function can(string $permission): bool
+    {
+        $user = User::current();
+
+        return $user !== null && ($user->isSuper() || $user->hasPermission($permission));
+    }
+
+    public static function authorize(string $permission): void
+    {
+        abort_unless(self::can($permission), 403);
+    }
 
     /**
      * @param  int|null  $limit  how many issues to list, for the widget
@@ -63,12 +91,193 @@ class Panel
             'unavailable' => $health['unavailable'] ?? [],
             'checkedAgo' => self::ago($health['checked_at'] ?? null),
             'commands' => $health['commands'] ?? self::COMMANDS,
-            'utilityUrl' => cp_route('utilities.index').'/porro',
-            'refreshUrl' => cp_route('utilities.porro.refresh'),
+            'flash' => self::flash(),
+            'utilityUrl' => cp_route('porro.index'),
+            'refreshUrl' => cp_route('porro.refresh'),
+            'activity' => $this->activity($health['activity'] ?? null),
+            'canManage' => self::can(self::MANAGE),
+            'blockingUrl' => cp_route('porro.blocking'),
+            'blockUrl' => cp_route('porro.block'),
             'v6' => self::isStatamic6(),
             'icon' => self::ICON,
             'severities' => self::SEVERITIES,
         ];
+    }
+
+    /**
+     * The Activity section: totals, and each flagged IP ready to show.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function activity(mixed $activity): ?array
+    {
+        if (! is_array($activity)) {
+            return null;
+        }
+
+        $flagged = [];
+
+        foreach (is_array($activity['flagged'] ?? null) ? $activity['flagged'] : [] as $ip) {
+            if (! is_array($ip) || ! is_string($ip['ip'] ?? null) || filter_var($ip['ip'], FILTER_VALIDATE_IP) === false) {
+                continue;
+            }
+
+            $signals = [];
+
+            foreach (self::SIGNALS as $signal => $label) {
+                if (($n = (int) ($ip['counts'][$signal] ?? 0)) > 0) {
+                    $signals[] = ['label' => $label, 'count' => $n];
+                }
+            }
+
+            usort($signals, fn ($a, $b) => $b['count'] <=> $a['count']);
+
+            $flagged[] = [
+                'ip' => $ip['ip'],
+                'country' => self::country($ip['country'] ?? null),
+                'signals' => $signals,
+                'request' => trim(((string) ($ip['last_method'] ?? '')).' '.((string) ($ip['last_path'] ?? ''))),
+                'seen' => isset($ip['last_seen']) ? Carbon::createFromTimestamp((int) $ip['last_seen'])->diffForHumans() : null,
+                'blocked' => $this->isBlocked($ip['ip']),
+                'reason' => __('Flagged: :signals', ['signals' => implode(', ', array_map(fn ($s) => "{$s['label']} ×{$s['count']}", $signals))]),
+            ];
+        }
+
+        $totals = is_array($activity['totals'] ?? null) ? $activity['totals'] : [];
+
+        return [
+            'recording' => (bool) ($activity['recording'] ?? false),
+            'hours' => (int) ($activity['hours'] ?? 24),
+            'totals' => [
+                ['label' => __('Probes for secrets and admin tools'), 'value' => (int) ($totals[Recorder::PROBE] ?? 0)],
+                ['label' => __('Failed logins'), 'value' => (int) ($totals[Recorder::LOGIN_FAILED] ?? 0)],
+                ['label' => __('404s'), 'value' => (int) ($totals[Recorder::NOT_FOUND] ?? 0)],
+                ['label' => __('Form posts'), 'value' => (int) ($totals[Recorder::POST_FLOOD] ?? 0)],
+            ],
+            'flagged' => $flagged,
+            'blocked' => (int) ($activity['blocked'] ?? 0),
+            'safelisted' => (int) ($activity['safelisted'] ?? 0),
+            'countries' => is_array($activity['countries'] ?? null) ? $activity['countries'] : null,
+        ];
+    }
+
+    private function isBlocked(string $ip): bool
+    {
+        try {
+            return $this->activity->blocked($ip) !== null;
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * The Blocking page.
+     *
+     * @return array<string, mixed>
+     */
+    public function blocking(Request $request): array
+    {
+        $now = time();
+        $list = $this->activity->blocklist();
+
+        try {
+            $blocks = $list->blocks($now);
+            $safe = $list->safe($now);
+            $failed = false;
+        } catch (Throwable $e) {
+            report($e);
+            [$blocks, $safe, $failed] = [[], [], true];
+        }
+
+        $ranges = $this->activity->ranges()->ranges();
+        $nginxPath = (string) config('porro.blocklist.nginx_path');
+
+        return [
+            'failed' => $failed,
+            'flash' => self::flash(),
+            'v6' => self::isStatamic6(),
+            'icon' => self::BLOCK_ICON,
+            'canManage' => self::can(self::MANAGE),
+            'healthUrl' => cp_route('porro.index'),
+            'urls' => [
+                'block' => cp_route('porro.block'),
+                'unblock' => cp_route('porro.unblock'),
+                'safelist' => cp_route('porro.safelist'),
+                'unsafelist' => cp_route('porro.unsafelist'),
+            ],
+            'prefill' => filter_var($request->query('safelist'), FILTER_VALIDATE_IP) ?: null,
+            'blocks' => array_map(fn (Entry $e) => $this->entry($e, $now), $blocks),
+            'safe' => array_map(fn (Entry $e) => $this->entry($e, $now), $safe),
+            'enforcement' => [
+                'app' => $this->activity->enforcing(),
+                'nginx' => (bool) config('porro.blocklist.nginx'),
+                'production' => $this->activity->isProduction(),
+                'nginxPath' => $nginxPath,
+                'nginxWritten' => is_file($nginxPath) ? Carbon::createFromTimestamp((int) filemtime($nginxPath))->diffForHumans() : null,
+                'include' => "include {$nginxPath};",
+                'realIp' => NginxBlocklist::realIp($this->activity->ranges()),
+                'reload' => sprintf('f=%s; s=/var/tmp/porro-nginx.stamp; [ "$f" -nt "$s" ] && nginx -t -q && systemctl reload nginx && touch "$s"', $nginxPath),
+            ],
+            'protected' => array_values(array_filter(array_map(fn (string $source) => [
+                'label' => ProtectedRanges::label($source),
+                'count' => count($ranges[$source] ?? []),
+            ], array_keys($ranges)), fn ($row) => $row['count'] > 0)),
+        ];
+    }
+
+    /**
+     * The last action's outcome, shown on the page itself: Statamic 6
+     * doesn't toast flashed messages on Blade pages.
+     *
+     * @return array{error: string|null, success: string|null}
+     */
+    private static function flash(): array
+    {
+        return [
+            'error' => is_string(session('error')) ? session('error') : null,
+            'success' => is_string(session('success')) ? session('success') : null,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function entry(Entry $entry, int $now): array
+    {
+        return [
+            'cidr' => $entry->cidr,
+            'note' => $entry->note,
+            'source' => match ($entry->source) {
+                Entry::SUGGESTED => __('Suggested'),
+                Entry::CONFIG => __('From config'),
+                default => __('Manual'),
+            },
+            'by' => $entry->addedBy,
+            'expires' => $entry->expiresAt ? Carbon::createFromTimestamp($entry->expiresAt)->diffForHumans(['parts' => 1]) : __('never'),
+            'fromConfig' => $entry->source === Entry::CONFIG,
+        ];
+    }
+
+    /**
+     * "🇩🇪 DE", or "Tor" for Cloudflare's T1. Null when unknown.
+     *
+     * @return array{code: string, label: string}|null
+     */
+    public static function country(mixed $code): ?array
+    {
+        $code = Recorder::country(is_string($code) ? $code : null);
+
+        if ($code === null) {
+            return null;
+        }
+
+        if ($code === 'T1') {
+            return ['code' => 'T1', 'label' => 'Tor'];
+        }
+
+        $flag = ctype_alpha($code) ? mb_chr(0x1F1E6 + ord($code[0]) - 65).mb_chr(0x1F1E6 + ord($code[1]) - 65) : '';
+
+        return ['code' => $code, 'label' => trim("{$flag} {$code}")];
     }
 
     /**
@@ -99,6 +308,7 @@ class Panel
             ]),
             'checked' => self::strings($health['checked'] ?? []),
             'unavailable' => self::strings($health['unavailable'] ?? []),
+            'activity' => is_array($health['activity'] ?? null) ? $health['activity'] : null,
             'checked_at' => is_string($health['checked_at'] ?? null) && strtotime($health['checked_at']) !== false ? $health['checked_at'] : null,
             'commands' => [
                 'connect' => is_string($commands['connect'] ?? null) ? $commands['connect'] : self::COMMANDS['connect'],
