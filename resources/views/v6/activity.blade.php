@@ -32,7 +32,8 @@
                     <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
                         @foreach ($activity['flagged'] as $ip)
                             <tr>
-                                <td v-pre class="py-2 pr-4 font-mono text-xs whitespace-nowrap">{{ $ip['ip'] }}</td>
+                                <td v-pre class="py-2 pr-4 font-mono text-xs whitespace-nowrap"><a href="{{ cp_route('porro.ip', $ip['ip']) }}" class="underline decoration-gray-300 underline-offset-2 hover:decoration-current">{{ $ip['ip'] }}</a>
+                                    @foreach ($ip['badges'] as $badge)<ui-badge size="sm" class="ml-1" color="{{ ['danger' => 'red', 'warning' => 'amber'][$badge['tone']] ?? 'default' }}" text="{{ $badge['label'] }}"></ui-badge>@endforeach</td>
                                 <td v-pre class="py-2 pr-4 whitespace-nowrap" title="{{ $ip['country']['code'] ?? '' }}">{{ $ip['country']['label'] ?? '—' }}</td>
                                 <td class="py-2 pr-4">
                                     <div class="flex flex-wrap gap-1">
@@ -49,7 +50,7 @@
                                             @if ($ip['blocked'])
                                                 <ui-badge size="sm" color="red" text="{{ __('Blocked') }}"></ui-badge>
                                             @else
-                                            <form method="POST" action="{{ $blockUrl }}">
+                                            <form method="POST" action="{{ $blockUrl }}" data-porro-confirm="{{ \Porro\Laravel\Activity\Confirm::attribute(\Porro\Laravel\Activity\Confirm::block($ip['ip'], 7)) }}">
                                                 @csrf
                                                 <input type="hidden" name="ip" value="{{ $ip['ip'] }}">
                                                 <input type="hidden" name="reason" value="{{ $ip['reason'] }}">
@@ -57,13 +58,18 @@
                                                 <input type="hidden" name="suggested" value="1">
                                                 <ui-button type="submit" size="sm" text="{{ __('Block 7 days') }}"></ui-button>
                                             </form>
-                                            <form method="POST" action="{{ $blockUrl }}">
+                                            <form method="POST" action="{{ $blockUrl }}" data-porro-confirm="{{ \Porro\Laravel\Activity\Confirm::attribute(\Porro\Laravel\Activity\Confirm::block($ip['ip'])) }}">
                                                 @csrf
                                                 <input type="hidden" name="ip" value="{{ $ip['ip'] }}">
                                                 <input type="hidden" name="reason" value="{{ $ip['reason'] }}">
                                                 <ui-button type="submit" size="sm" text="{{ __('Block permanently') }}"></ui-button>
                                             </form>
-                                            <ui-button size="sm" variant="ghost" href="{{ $blockingUrl }}?safelist={{ urlencode($ip['ip']) }}#safelist" text="{{ __('Safelist') }}"></ui-button>
+                                            <form method="POST" action="{{ $safelistUrl }}" data-porro-confirm="{{ \Porro\Laravel\Activity\Confirm::attribute(\Porro\Laravel\Activity\Confirm::safelist($ip['ip'])) }}">
+                                                @csrf
+                                                <input type="hidden" name="ip" value="{{ $ip['ip'] }}">
+                                                <input type="hidden" name="label" value="{{ __('From the activity table') }}">
+                                                <ui-button type="submit" size="sm" variant="ghost" text="{{ __('Safelist') }}"></ui-button>
+                                            </form>
                                             @endif
                                         </div>
                                     </td>
@@ -86,3 +92,5 @@
         </p>
     </ui-card>
 </ui-panel>
+
+@include('porro::v6.confirm')

@@ -91,6 +91,7 @@ class Panel
             'canManage' => self::can(self::MANAGE),
             'blockingUrl' => cp_route('porro.blocking'),
             'blockUrl' => cp_route('porro.block'),
+            'safelistUrl' => cp_route('porro.safelist'),
             'v6' => self::isStatamic6(),
             'icon' => self::ICON,
             'severities' => self::SEVERITIES,
@@ -119,6 +120,29 @@ class Panel
             ],
             'prefill' => filter_var($request->query('safelist'), FILTER_VALIDATE_IP) ?: null,
             ...$this->presenter->blocking(),
+        ];
+    }
+
+    /**
+     * IP details.
+     *
+     * @return array<string, mixed>
+     */
+    public function ip(Request $request, string $ip): array
+    {
+        $reputation = session('reputation');
+
+        return [
+            'v6' => self::isStatamic6(),
+            'icon' => self::BLOCK_ICON,
+            'flash' => self::flash(),
+            'canManage' => self::can(self::MANAGE),
+            'healthUrl' => cp_route('porro.index'),
+            'blockingUrl' => cp_route('porro.blocking'),
+            'blockUrl' => cp_route('porro.block'),
+            'safelistUrl' => cp_route('porro.safelist'),
+            'reputationUrl' => cp_route('porro.reputation', $ip),
+            'details' => $this->presenter->ip($ip, is_array($reputation) && ($reputation['ip'] ?? null) === $ip ? $reputation : null),
         ];
     }
 
