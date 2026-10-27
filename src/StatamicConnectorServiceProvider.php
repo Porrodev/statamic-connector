@@ -4,6 +4,7 @@ namespace Porro\Statamic;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Porro\Laravel\Activity\Confirm;
 use Porro\Statamic\Http\BlockingController;
 use Porro\Statamic\Http\IpController;
 use Porro\Statamic\Http\SiteHealthController;
@@ -59,6 +60,10 @@ class StatamicConnectorServiceProvider extends ServiceProvider
             // It used to be a utility: keep old bookmarks working.
             Route::get('utilities/porro', fn () => redirect(cp_route('porro.index')));
         });
+
+        // Opens the block and safelist confirmation dialog. Vue drops script
+        // tags from CP templates, so it comes in with the CP's own scripts.
+        Statamic::inlineScript(Confirm::script());
 
         SiteHealthWidget::register();
     }

@@ -29,7 +29,7 @@
 @if ($canManage && ! $details['blocked'] && ! $details['safelisted'])
     <div class="flex flex-wrap items-center mb-6">
         @foreach ([[__('Block permanently'), 0, $details['ip'], 'btn-primary'], [__('Block 7 days'), 7, $details['ip'], 'btn'], ...($details['range'] ? [[__('Block :range', ['range' => $details['range']]), 7, $details['range'], 'btn']] : [])] as [$label, $days, $target, $class])
-            <form method="POST" action="{{ $blockUrl }}" class="mr-2 mb-1" onsubmit="return confirm({{ \Illuminate\Support\Js::from(\Porro\Laravel\Activity\Confirm::block($target, $days)) }})">
+            <form method="POST" action="{{ $blockUrl }}" class="mr-2 mb-1" data-porro-confirm="{{ \Porro\Laravel\Activity\Confirm::attribute(\Porro\Laravel\Activity\Confirm::block($target, $days)) }}">
                 @csrf
                 <input type="hidden" name="ip" value="{{ $target }}">
                 <input type="hidden" name="reason" value="{{ $details['reason'] }}">
@@ -38,7 +38,7 @@
                 <button type="submit" class="{{ $class }}">{{ $label }}</button>
             </form>
         @endforeach
-        <form method="POST" action="{{ $safelistUrl }}" class="mb-1" onsubmit="return confirm({{ \Illuminate\Support\Js::from(\Porro\Laravel\Activity\Confirm::safelist($details['ip'])) }})">
+        <form method="POST" action="{{ $safelistUrl }}" class="mb-1" data-porro-confirm="{{ \Porro\Laravel\Activity\Confirm::attribute(\Porro\Laravel\Activity\Confirm::safelist($details['ip'])) }}">
                     @csrf
                     <input type="hidden" name="ip" value="{{ $details['ip'] }}">
                     <input type="hidden" name="label" value="{{ __('From the IP details page') }}">
@@ -100,3 +100,5 @@
     {{ __('Sources') }}: {{ implode(' · ', $details['sources']) }} · {{ $details['fetched'] }}
     @if ($details['attribution']) · <a href="{{ $details['attribution']['url'] }}" target="_blank" rel="noopener" class="text-blue">{{ $details['attribution']['text'] }}</a>@endif
 </p>
+
+@include('porro::v5.confirm')
