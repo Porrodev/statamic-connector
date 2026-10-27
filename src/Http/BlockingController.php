@@ -29,6 +29,14 @@ class BlockingController extends CpController
         return view('porro::blocking', $panel->blocking($request));
     }
 
+    /** The whole blocklist or safelist: searchable, filterable, 50 a page. */
+    public function list(Request $request, Panel $panel, string $list): View
+    {
+        Panel::authorize(Panel::VIEW);
+
+        return view('porro::list', $panel->list($request, $list));
+    }
+
     public function nginx(Request $request, Panel $panel): View
     {
         Panel::authorize(Panel::VIEW);

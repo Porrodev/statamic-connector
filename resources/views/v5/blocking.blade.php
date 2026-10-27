@@ -73,7 +73,7 @@ php please porro:cloudflare connect</pre>
     </div>
 </div>
 
-<h2 class="mb-2 font-bold">{{ __('Blocklist') }} <span class="font-normal text-gray-600 text-sm">· {{ trans_choice(':count entry|:count entries', count($blocks), ['count' => count($blocks)]) }}</span></h2>
+<h2 class="mb-2 font-bold">{{ __('Blocklist') }} <span class="font-normal text-gray-600 text-sm">· {{ trans_choice(':count entry|:count entries', $blockCount, ['count' => number_format($blockCount)]) }}</span></h2>
 <div class="card p-0 mb-6">
     @if ($canManage)
         <form method="POST" action="{{ $urls['block'] }}" data-form="block" class="flex flex-wrap items-center p-4 border-b">
@@ -92,6 +92,7 @@ php please porro:cloudflare connect</pre>
         </form>
     @endif
     @include('porro::v5.entries', ['entries' => $blocks, 'remove' => $urls['unblock'], 'empty' => __('Nothing is blocked.')])
+            @if ($blockCount > count($blocks))<p class="mt-3 px-4 pb-4"><a href="{{ $blocklistUrl }}" class="text-sm text-blue hover:text-blue-800">{{ __('Show all :count, with search →', ['count' => number_format($blockCount)]) }}</a></p>@elseif ($blockCount > 0)<p class="mt-3 px-4 pb-4"><a href="{{ $blocklistUrl }}" class="text-sm text-blue hover:text-blue-800">{{ __('Search the blocklist →') }}</a></p>@endif
 </div>
 
 <h2 id="safelist" class="mb-2 font-bold">{{ __('Safelist') }} <span class="font-normal text-gray-600 text-sm">· {{ __('Never blocked or flagged') }}</span></h2>
@@ -107,6 +108,7 @@ php please porro:cloudflare connect</pre>
         </form>
     @endif
     @include('porro::v5.entries', ['entries' => $safe, 'remove' => $urls['unsafelist'], 'empty' => __('Nothing is safelisted.')])
+            @if ($safeCount > count($safe))<p class="mt-3 px-4 pb-4"><a href="{{ $safelistUrl }}" class="text-sm text-blue hover:text-blue-800">{{ __('Show all :count, with search →', ['count' => number_format($safeCount)]) }}</a></p>@endif
 </div>
 
 <h2 class="mb-2 font-bold">{{ __('Always protected') }} <span class="font-normal text-gray-600 text-sm">· {{ __('Can’t be blocked') }}</span></h2>
