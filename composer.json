@@ -17,9 +17,9 @@
     ],
     "require": {
         "php": "^8.2",
-        "porro/laravel-connector": "dev-main as 0.3.0",
+        "porro/laravel-connector": "^0.3.0",
         "statamic/cms": "^5.0|^6.0",
-        "porro/php-core": "dev-main as 0.3.0"
+        "porro/php-core": "^0.3.0"
     },
     "autoload": {
         "psr-4": {
@@ -68,18 +68,6 @@
         {
             "name": "Porro",
             "homepage": "https://porro.dev"
-        }
-    ],
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/Porrodev/laravel-connector",
-            "no-api": true
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/Porrodev/php-core",
-            "no-api": true
         }
     ]
 }

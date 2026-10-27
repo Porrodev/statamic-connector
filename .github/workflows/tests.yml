@@ -7,9 +7,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    # Composer reads GitHub's API for packages from VCS repositories; signed
-    # in with the workflow's token, the matrix doesn't hit the anonymous
-    # rate limit.
+    # Signed in with the workflow's token, a big matrix doesn't hit GitHub's
+    # anonymous API rate limit when Composer downloads packages.
     env:
       COMPOSER_AUTH: '{"github-oauth": {"github.com": "${{ secrets.GITHUB_TOKEN }}"}}'
     strategy:
