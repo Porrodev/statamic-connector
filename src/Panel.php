@@ -110,6 +110,7 @@ class Panel
             'icon' => self::BLOCK_ICON,
             'canManage' => self::can(self::MANAGE),
             'healthUrl' => cp_route('porro.index'),
+            'nginxUrl' => cp_route('porro.nginx'),
             'urls' => [
                 'block' => cp_route('porro.block'),
                 'unblock' => cp_route('porro.unblock'),
@@ -118,6 +119,21 @@ class Panel
             ],
             'prefill' => filter_var($request->query('safelist'), FILTER_VALIDATE_IP) ?: null,
             ...$this->presenter->blocking(),
+        ];
+    }
+
+    /**
+     * The nginx setup page.
+     *
+     * @return array<string, mixed>
+     */
+    public function nginx(Request $request): array
+    {
+        return [
+            'v6' => self::isStatamic6(),
+            'icon' => self::BLOCK_ICON,
+            'blockingUrl' => cp_route('porro.blocking'),
+            ...$this->presenter->nginx((string) $request->server('REMOTE_ADDR')),
         ];
     }
 

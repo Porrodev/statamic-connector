@@ -50,25 +50,26 @@ php please porro:cloudflare connect</pre>
     </div>
     <div class="p-4 border-t">
         <p class="font-bold">nginx ·
+            @php($loaded = collect($enforcement['servers'])->where('ok', true)->count())
             @if (! $enforcement['nginx'])
                 <span class="text-gray-600">{{ __('Not set up') }}</span>
             @elseif (! $enforcement['production'])
                 <span class="text-gray-600">{{ __('Production only') }}</span>
-            @elseif ($enforcement['nginxWritten'])
-                <span class="text-green-600">{{ __('File written :ago', ['ago' => $enforcement['nginxWritten']]) }}</span>
+            @elseif ($enforcement['servers'] && $loaded === count($enforcement['servers']))
+                <span class="text-green-600">{{ __('Loaded') }}</span>
             @else
-                <span class="text-orange">{{ __('Waiting for the first sync') }}</span>
+                <span class="text-orange">{{ __('Setting up') }}</span>
             @endif
         </p>
-        @if ($enforcement['nginx'])
-            <p class="text-gray-700 mb-2">{{ __('On each server: include the file in the site’s nginx config (Forge: Site → Edit Nginx Configuration, inside server { }), real IP lines first when behind Cloudflare.') }}</p>
-            <pre v-pre class="text-xs bg-gray-200 rounded p-2 overflow-x-auto">{{ $enforcement['realIp'] }}
-{{ $enforcement['include'] }}</pre>
-            <p class="text-gray-700 my-2">{{ __('Then reload nginx when the list changes: a scheduled job as root, every minute (Forge: Server → Scheduler).') }}</p>
-            <pre v-pre class="text-xs bg-gray-200 rounded p-2 overflow-x-auto">{{ $enforcement['reload'] }}</pre>
-        @else
-            <p class="text-gray-700">{{ __('For sites not behind Cloudflare: set PORRO_BLOCK_NGINX=true and this page shows the two one-time steps for each server.') }}</p>
-        @endif
+        <p class="text-gray-700">
+            @if ($enforcement['servers'])
+                {{ trans_choice(':loaded of :count server loaded|:loaded of :count servers loaded', count($enforcement['servers']), ['loaded' => $loaded, 'count' => count($enforcement['servers'])]) }} ·
+                <a href="{{ $nginxUrl }}" class="text-blue hover:text-blue-800">{{ __('Setup and servers') }} &rarr;</a>
+            @else
+                {{ __('For sites not behind Cloudflare, or as well as it. Two one-time steps on each server.') }}
+                <a href="{{ $nginxUrl }}" class="text-blue hover:text-blue-800">{{ __('Set up nginx') }} &rarr;</a>
+            @endif
+        </p>
     </div>
 </div>
 

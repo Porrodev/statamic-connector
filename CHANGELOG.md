@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **nginx setup page**, linked from Blocking: the two one-time steps with this site's real paths, real-IP lines first behind Cloudflare.
+  - **Every server:** each one's progress, checked by the server itself every minute: no file yet, include missing, waiting for reload, or loaded.
+  - **Blocking page:** the nginx row now says how many servers are loaded, rather than repeating the snippets.
 - **The Blocking page shows Cloudflare WAF mode:** whether it's set up and connected, the zone, the last sync, IPs already blocked by another site on the account, and any error. Until it's connected, it shows the setup steps. Requires `porro/laravel-connector`'s Cloudflare WAF mode.
 - **Porro has its own section in the control panel nav:** **Site Health** and **Blocking**, at `/cp/porro`. The old Utilities address redirects.
 - **New permissions:** **View Porro Site Health** and **Block and safelist IP addresses**. **Access Porro Site Health utility** is no longer used, so give roles that had it **View Porro Site Health** instead.

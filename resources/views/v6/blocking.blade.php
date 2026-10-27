@@ -56,25 +56,26 @@ php please porro:cloudflare connect</pre>
                 </li>
                 <li class="py-3 last:pb-0">
                     <div class="flex items-center gap-2 font-medium">nginx
+                        @php($loaded = collect($enforcement['servers'])->where('ok', true)->count())
                         @if (! $enforcement['nginx'])
                             <ui-badge size="sm" text="{{ __('Not set up') }}"></ui-badge>
                         @elseif (! $enforcement['production'])
                             <ui-badge size="sm" text="{{ __('Production only') }}"></ui-badge>
-                        @elseif ($enforcement['nginxWritten'])
-                            <ui-badge size="sm" color="green" text="{{ __('File written :ago', ['ago' => $enforcement['nginxWritten']]) }}"></ui-badge>
+                        @elseif ($enforcement['servers'] && $loaded === count($enforcement['servers']))
+                            <ui-badge size="sm" color="green" text="{{ __('Loaded') }}"></ui-badge>
                         @else
-                            <ui-badge size="sm" color="amber" text="{{ __('Waiting for the first sync') }}"></ui-badge>
+                            <ui-badge size="sm" color="amber" text="{{ __('Setting up') }}"></ui-badge>
                         @endif
                     </div>
-                    @if ($enforcement['nginx'])
-                        <p class="text-gray-600 dark:text-gray-400 mb-2">{{ __('On each server: include the file in the site’s nginx config (Forge: Site → Edit Nginx Configuration, inside server { }), real IP lines first when behind Cloudflare.') }}</p>
-                        <pre v-pre class="text-xs bg-gray-50 dark:bg-gray-900 rounded-lg p-3 overflow-x-auto">{{ $enforcement['realIp'] }}
-{{ $enforcement['include'] }}</pre>
-                        <p class="text-gray-600 dark:text-gray-400 my-2">{{ __('Then reload nginx when the list changes: a scheduled job as root, every minute (Forge: Server → Scheduler).') }}</p>
-                        <pre v-pre class="text-xs bg-gray-50 dark:bg-gray-900 rounded-lg p-3 overflow-x-auto">{{ $enforcement['reload'] }}</pre>
-                    @else
-                        <p class="text-gray-600 dark:text-gray-400">{{ __('For sites not behind Cloudflare: set PORRO_BLOCK_NGINX=true and this page shows the two one-time steps for each server.') }}</p>
-                    @endif
+                    <p class="text-gray-600 dark:text-gray-400">
+                        @if ($enforcement['servers'])
+                            {{ trans_choice(':loaded of :count server loaded|:loaded of :count servers loaded', count($enforcement['servers']), ['loaded' => $loaded, 'count' => count($enforcement['servers'])]) }} ·
+                            <a href="{{ $nginxUrl }}" class="underline underline-offset-2">{{ __('Setup and servers') }} →</a>
+                        @else
+                            {{ __('For sites not behind Cloudflare, or as well as it. Two one-time steps on each server.') }}
+                            <a href="{{ $nginxUrl }}" class="underline underline-offset-2">{{ __('Set up nginx') }} →</a>
+                        @endif
+                    </p>
                 </li>
             </ul>
         </ui-card>

@@ -53,7 +53,8 @@ it('lists the blocklist, safelist and protected ranges', function () {
         ->toContain('From config')
         ->toContain('Laravel Forge')
         ->toContain('Forge health checks')
-        ->toContain('PORRO_BLOCK_NGINX=true');
+        ->toContain('Set up nginx')
+        ->toContain(cp_route('porro.nginx'));
 });
 
 it('blocks an IP, which is then turned away', function () {
@@ -200,4 +201,39 @@ it('shows Cloudflare WAF mode on the Blocking page', function () {
     ]);
     // The error comes from Cloudflare: escaped, and out of Vue's reach.
     expect($page())->toContain('Sync failed')->toMatch('/<p v-pre[^>]*>Cloudflare refused the token \{\{ constructor \}\}<\/p>/');
+});
+
+describe('nginx setup', function () {
+    beforeEach(function () {
+        $this->dir = sys_get_temp_dir().'/porro-nginx-'.bin2hex(random_bytes(4));
+        mkdir($this->dir.'/sites-enabled', 0755, true);
+        $this->file = $this->dir.'/nginx-blocklist.conf';
+        config([
+            'porro.blocklist.nginx' => true,
+            'porro.blocklist.nginx_path' => $this->file,
+            'porro.blocklist.nginx_config_dirs' => [$this->dir.'/sites-enabled'],
+            'porro.blocklist.nginx_stamp' => $this->dir.'/stamp',
+        ]);
+    });
+
+    it('shows the steps with this site’s paths, and each server', function () {
+        expect(pageHtml($this->actingAs(admin())->get(cp_route('porro.nginx'))->assertOk()))
+            ->toContain('Set up nginx')
+            ->toContain("include {$this->file};")
+            ->toContain('No server has reported yet');
+
+        $this->app['env'] = 'production';
+        file_put_contents($this->dir.'/sites-enabled/site', "server {\n    include {$this->file};\n}\n");
+        $this->artisan('porro:blocklist-sync')->assertSuccessful();
+        touch($this->dir.'/stamp', time() + 5);
+        $this->artisan('porro:blocklist-sync')->assertSuccessful();
+
+        expect(pageHtml($this->actingAs(admin())->get(cp_route('porro.nginx'))))->toContain('Loaded')->toContain('reloaded')
+            ->and(pageHtml($this->actingAs(admin())->get(cp_route('porro.blocking'))))->toContain('1 of 1 server loaded')->toContain(cp_route('porro.nginx'));
+    });
+
+    it('is for people who can see Site Health', function () {
+        $this->actingAs(editorWith('access cp'))->get(cp_route('porro.nginx'))->assertForbidden();
+        $this->actingAs(editorWith('view porro site health'))->get(cp_route('porro.nginx'))->assertOk();
+    });
 });
