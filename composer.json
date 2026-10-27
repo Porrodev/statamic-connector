@@ -73,11 +73,13 @@
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/Porrodev/laravel-connector"
+            "url": "https://github.com/Porrodev/laravel-connector",
+            "no-api": true
         },
         {
             "type": "vcs",
-            "url": "https://github.com/Porrodev/php-core"
+            "url": "https://github.com/Porrodev/php-core",
+            "no-api": true
         }
     ]
 }
