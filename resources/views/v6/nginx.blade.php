@@ -1,38 +1,51 @@
 {{-- Statamic 6. Server names come from the hosts, so they sit in v-pre too. --}}
-@php($code = 'text-xs bg-gray-50 dark:bg-gray-900 rounded-lg p-3 overflow-x-auto')
+@php
+    $code = 'text-xs bg-gray-50 dark:bg-gray-900 rounded-lg p-3 overflow-x-auto';
+@endphp
 <div class="max-w-page mx-auto space-y-6" v-cloak>
     <div>
         <a href="{{ $blockingUrl }}" class="text-sm underline underline-offset-2">← {{ __('Blocking') }}</a>
         <ui-header title="{{ __('Set up nginx') }}" icon="{{ $icon }}"></ui-header>
-        <p class="text-sm text-gray-600 dark:text-gray-400">{{ __('nginx turns blocked IPs away before PHP runs. Porro writes a deny file on each server; nginx includes it and reloads when it changes. Two one-time steps, on every server this site runs on.') }}</p>
+        <p class="text-sm text-gray-600 dark:text-gray-400">{{ __('nginx turns blocked IPs away before PHP runs. Porro keeps a deny file up to date; nginx reads it. Three one-time steps: the first once for the site, the other two on every server it runs on.') }}</p>
     </div>
 
-    @unless ($enforcement['nginx'])
-        <ui-card>
-            <p class="text-sm mb-2">{{ __('nginx mode is off. Add this to the site’s environment first, so Porro starts writing the file every minute:') }}</p>
-            <pre v-pre class="{{ $code }}">PORRO_BLOCK_NGINX=true</pre>
-        </ui-card>
-    @endunless
-
     @unless ($enforcement['production'])
-        <ui-card><p class="text-sm">{{ __('This copy isn’t production, so it doesn’t write the file. Set these steps up on the production servers.') }}</p></ui-card>
+        <ui-card><p class="text-sm">{{ __('This copy isn’t production, so it doesn’t write the file. Do these steps for the production site and its servers.') }}</p></ui-card>
     @endunless
 
-    <ui-panel heading="{{ __('Step 1 · include the file') }}" subheading="{{ __('In the site’s nginx config, inside server { }. On Forge: Site → Edit Nginx Configuration.') }}">
+    @php
+        $servers = $progress['servers'];
+        $onServers = fn (int $n) => $servers === 0 ? __('No server has checked in yet') : trans_choice('Done on :n of :count server|Done on :n of :count servers', $servers, ['n' => $n, 'count' => $servers]);
+    @endphp
+
+    <ui-panel heading="{{ __('1 · Turn on nginx mode') }}" subheading="{{ __('Once, for the site') }} · {{ $enforcement['nginx'] ? '✓ '.__('Done') : __('To do') }}">
         <ui-card>
-            @if ($behindCloudflare)
-                <p class="text-sm mb-2">{{ __('This site is behind Cloudflare, so the real IP lines come first: without them nginx sees Cloudflare’s address and would deny Cloudflare, not the visitor.') }}</p>
-                <pre v-pre class="{{ $code }}">{{ $enforcement['realIp'] }}{{ $enforcement['include'] }}</pre>
+            <p class="text-sm mb-2">{{ __('Add this to the site’s environment: .env, or on Forge, the site’s Environment tab. Porro then writes the deny file every minute.') }}</p>
+            <div class="flex items-start gap-2"><pre v-pre class="{{ $code }} flex-1">PORRO_BLOCK_NGINX=true</pre><ui-button size="sm" data-porro-copy="PORRO_BLOCK_NGINX=true" text="{{ __('Copy') }}"></ui-button></div>
+        </ui-card>
+    </ui-panel>
+
+    <ui-panel heading="{{ __('2 · Add one line to the site’s nginx config') }}" subheading="{{ __('On every server') }} · {{ ($servers && $progress['included'] === $servers ? '✓ ' : '').$onServers($progress['included']) }}">
+        <ui-card>
+            <p class="text-sm mb-2">{{ __('Inside server { }, above the first location. On Forge: open the site, then Edit Nginx Configuration from the Files menu, and save.') }}</p>
+            <div class="flex items-start gap-2"><pre v-pre class="{{ $code }} flex-1">{{ $enforcement['include'] }}</pre><ui-button size="sm" data-porro-copy="{{ $enforcement['include'] }}" text="{{ __('Copy') }}"></ui-button></div>
+            <p class="text-xs text-gray-600 dark:text-gray-400 mt-3 mb-1">{{ __('Where it goes, in a trimmed copy of this site’s config:') }}</p>
+            <pre v-pre class="{{ $code }}">@foreach ($example as $row)<span style="display: block; min-height: 1.5em;{{ $row['add'] ? ' background: rgb(191 232 74 / .28); margin: 0 -.75rem; padding: 0 .75rem; font-weight: 600;' : '' }}">{{ $row['line'] }}@if ($row['add'])  <span style="font-weight: 400; opacity: .6">← {{ __('add this line') }}</span>@endif</span>@endforeach</pre>
+            @if ($realIpInFile)
+                <p class="text-xs mt-3">{{ __('Behind Cloudflare: the file also carries Cloudflare’s real IP lines, so nginx turns away the visitor and not Cloudflare. Nothing else to add. If this config already sets real_ip_header, set PORRO_NGINX_REAL_IP=false.') }}</p>
+            @elseif ($behindCloudflare)
+                <p class="text-xs mt-3 mb-2">{{ __('This site is behind Cloudflare but PORRO_NGINX_REAL_IP is off, so the config needs Cloudflare’s real IP lines too. Without them nginx sees Cloudflare’s address and would deny Cloudflare, not the visitor:') }}</p>
+                <div class="flex items-start gap-2"><pre v-pre class="{{ $code }} flex-1">{{ $enforcement['realIp'] }}</pre><ui-button size="sm" data-porro-copy="{{ $enforcement['realIp'] }}" text="{{ __('Copy') }}"></ui-button></div>
             @else
-                <pre v-pre class="{{ $code }}">{{ $enforcement['include'] }}</pre>
-                <p class="text-xs text-gray-600 dark:text-gray-400 mt-2">{{ __('Behind Cloudflare or another proxy? Its real IP lines have to come before the include, or nginx would deny the proxy instead of the visitor.') }}</p>
+                <p class="text-xs text-gray-600 dark:text-gray-400 mt-3">{{ __('Behind Cloudflare? Porro adds Cloudflare’s real IP lines to the file for you once you open this page through it, or once a Cloudflare token is set.') }}</p>
             @endif
         </ui-card>
     </ui-panel>
 
-    <ui-panel heading="{{ __('Step 2 · reload nginx when the list changes') }}" subheading="{{ __('A scheduled job as root, every minute. On Forge: Server → Scheduler → New job, user root.') }}">
+    <ui-panel heading="{{ __('3 · Reload nginx when the list changes') }}" subheading="{{ __('On every server') }} · {{ ($servers && $progress['loaded'] === $servers ? '✓ ' : '').$onServers($progress['loaded']) }}">
         <ui-card>
-            <pre v-pre class="{{ $code }}">{{ $enforcement['reload'] }}</pre>
+            <p class="text-sm mb-2">{{ __('A scheduled job that runs every minute as root. On Forge: Server → Scheduler → New job, user root, frequency every minute.') }}</p>
+            <div class="flex items-start gap-2"><pre v-pre class="{{ $code }} flex-1">{{ $enforcement['reload'] }}</pre><ui-button size="sm" data-porro-copy="{{ $enforcement['reload'] }}" text="{{ __('Copy') }}"></ui-button></div>
             <p class="text-xs text-gray-600 dark:text-gray-400 mt-2">{{ __('It reloads only when the file has changed and nginx -t passes, so a bad config never takes the site down.') }}</p>
         </ui-card>
     </ui-panel>
@@ -51,7 +64,7 @@
                     <ui-badge size="sm" color="{{ $server['ok'] ? 'green' : ($server['state'] === 'not_included' ? 'red' : 'amber') }}" text="{{ $server['label'] }}"></ui-badge>
                 </div>
             @empty
-                <p class="text-sm">{{ __('No server has reported yet. Once PORRO_BLOCK_NGINX is on, each server checks itself every minute and shows up here.') }}</p>
+                <p class="text-sm">{{ __('No server has checked in yet. Once step 1 is done, each server checks itself every minute and shows up here.') }}</p>
             @endforelse
             <p class="text-xs text-gray-600 dark:text-gray-400 mt-3">
                 {{ __('Each server checks by looking, never by running anything: the file exists, a readable nginx config includes it, and the reload job has run since the last change.') }}

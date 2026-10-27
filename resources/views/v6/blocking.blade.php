@@ -119,12 +119,33 @@ php please porro:cloudflare connect</pre>
 
     <ui-panel heading="{{ __('Always protected') }}" subheading="{{ __('Can’t be blocked') }}">
         <ui-card>
-            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">{{ __('Infrastructure that has to reach this site. Blocks that overlap these are refused, and removed if a list changes.') }}</p>
-            <ul class="divide-y divide-gray-200 dark:divide-gray-800 text-sm">
+            <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">{{ __('Addresses that have to reach this site. Blocks that overlap these are refused, and removed if a list changes. Open one to see its addresses and why.') }}</p>
+            <div class="divide-y divide-gray-200 dark:divide-gray-800 text-sm">
                 @foreach ($protected as $row)
-                    <li class="py-2 flex justify-between"><span>{{ $row['label'] }}</span><span class="text-gray-600 dark:text-gray-400">{{ trans_choice(':count range|:count ranges', $row['count'], ['count' => $row['count']]) }}</span></li>
+                    <details class="group py-2">
+                        <summary class="flex justify-between gap-4 cursor-pointer list-none">
+                            <span><span class="inline-block text-gray-500 transition-transform group-open:rotate-90">›</span> {{ $row['label'] }}</span>
+                            @if ($row['on'])
+                                <span class="text-gray-600 dark:text-gray-400">{{ trans_choice(':count range|:count ranges', $row['count'], ['count' => $row['count']]) }}</span>
+                            @else
+                                <ui-badge size="sm" text="{{ __('Switched off') }}"></ui-badge>
+                            @endif
+                        </summary>
+                        <div class="mt-2 space-y-2 text-xs">
+                            <p>{{ $row['why'] }}</p>
+                            @if ($row['from'])
+                                <p class="text-gray-600 dark:text-gray-400">{{ __('From') }}: @foreach ($row['from'] as $url)<a href="{{ $url }}" target="_blank" rel="noopener" class="underline">{{ parse_url($url, PHP_URL_HOST) }}{{ parse_url($url, PHP_URL_PATH) }}</a>@if (! $loop->last) · @endif @endforeach</p>
+                            @endif
+                            @if ($row['env'])
+                                <p class="text-gray-600 dark:text-gray-400">{{ $row['on'] ? __('Not needed here? Switch it off with :setting.', ['setting' => $row['env'].'=false']) : __('Switched off with :setting. Remove it to protect these again.', ['setting' => $row['env'].'=false']) }}</p>
+                            @endif
+                            @if ($row['ranges'])
+                                <div v-pre class="font-mono rounded-lg bg-gray-50 dark:bg-gray-900 p-3" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(24ch, 1fr)); gap: 2px 16px; max-height: 240px; overflow-y: auto;">@foreach ($row['ranges'] as $range)<span>{{ $range }}</span>@endforeach</div>
+                            @endif
+                        </div>
+                    </details>
                 @endforeach
-            </ul>
+            </div>
         </ui-card>
     </ui-panel>
 </div>
