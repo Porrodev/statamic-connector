@@ -1,5 +1,5 @@
 {{-- Statamic 6: rendered by the control panel's Vue app, so ui-* components work here. --}}
-<div class="max-w-page mx-auto space-y-6">
+<div class="max-w-page mx-auto space-y-6" v-cloak>
     <ui-header title="{{ __('Porro Site Health') }}" icon="{{ $icon }}">
         <template #actions>
             <form method="POST" action="{{ $refreshUrl }}">

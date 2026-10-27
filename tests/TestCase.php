@@ -59,6 +59,9 @@ abstract class TestCase extends Orchestra
         $app['config']->set('statamic.static_caching.strategy', 'half');
         $app['config']->set('statamic.git.enabled', false);
 
+        // Testbench runs as "testing", which would otherwise turn reporting off.
+        $app['config']->set('porro.enabled', true);
+
         // Never touch the real crontab of whoever runs the tests.
         $app->instance(CrontabIo::class, new FakeCrontab(works: false));
     }
