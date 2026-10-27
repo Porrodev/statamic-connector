@@ -51,6 +51,7 @@ class StatamicConnectorServiceProvider extends ServiceProvider
                 Route::post('activity/{ip}/reputation', [IpController::class, 'reputation'])->name('reputation')->where('ip', '[0-9A-Fa-f:.]+');
                 Route::get('blocking', [BlockingController::class, 'index'])->name('blocking');
                 Route::get('blocking/nginx', [BlockingController::class, 'nginx'])->name('nginx');
+                Route::get('blocking/{list}', [BlockingController::class, 'list'])->name('list')->whereIn('list', ['blocklist', 'safelist']);
                 Route::post('blocking/block', [BlockingController::class, 'block'])->name('block');
                 Route::post('blocking/unblock', [BlockingController::class, 'unblock'])->name('unblock');
                 Route::post('blocking/safelist', [BlockingController::class, 'safelist'])->name('safelist');

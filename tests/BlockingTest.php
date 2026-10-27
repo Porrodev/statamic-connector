@@ -361,3 +361,38 @@ it('hides each Statamic 6 page until Vue has compiled it, so the raw markup neve
         expect(pageHtml($this->actingAs(admin())->get($url)->assertOk()))->toContain('<div class="max-w-page mx-auto space-y-6" v-cloak>');
     }
 });
+
+describe('the full lists', function () {
+    beforeEach(function () {
+        $rows = [];
+        for ($i = 1; $i <= 60; $i++) {
+            $rows[] = (new Entry("5.188.10.{$i}", $i % 2 ? 'Probing for .env' : 'Failed logins', $i % 3 ? Entry::SUGGESTED : Entry::MANUAL, 1000 + $i, $i <= 5 ? time() + 3 * 86400 : null, 'Ops'))->toArray();
+        }
+        DB::table('porro_blocklist')->insert($rows);
+    });
+
+    it('shows the newest ten on Blocking, and links to the rest', function () {
+        $html = pageHtml($this->actingAs(admin())->get(cp_route('porro.blocking')));
+
+        expect($html)->toContain('Show all 60, with search')->toContain(cp_route('porro.list', 'blocklist'))
+            ->and(substr_count($html, 'name="ip" value="5.188.10.'))->toBe(10);
+    });
+
+    it('searches, filters and pages the whole list', function () {
+        $url = cp_route('porro.list', 'blocklist');
+
+        $first = pageHtml($this->actingAs(admin())->get($url)->assertOk());
+        expect($first)->toContain('60 entries')->toContain('Page 1 of 2')
+            ->and(substr_count($first, 'name="ip" value='))->toBe(50);
+
+        expect(pageHtml($this->actingAs(admin())->get($url.'?page=2')))->toContain('value="5.188.10.1"')
+            ->and(pageHtml($this->actingAs(admin())->get($url.'?q=5.188.10.7')))->toContain('value="5.188.10.7"')->not->toContain('value="5.188.10.8"')
+            ->and(substr_count(pageHtml($this->actingAs(admin())->get($url.'?filter=expiring')), 'name="ip" value='))->toBe(5)
+            ->and(pageHtml($this->actingAs(admin())->get($url.'?q=nothing-like-this')))->toContain('Nothing matches.');
+    });
+
+    it('has a safelist page, and is for people who can see Site Health', function () {
+        expect(pageHtml($this->actingAs(admin())->get(cp_route('porro.list', 'safelist'))->assertOk()))->toContain('Nothing is safelisted.');
+        $this->actingAs(editorWith('access cp'))->get(cp_route('porro.list', 'blocklist'))->assertForbidden();
+    });
+});

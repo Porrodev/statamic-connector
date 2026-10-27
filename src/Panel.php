@@ -112,6 +112,8 @@ class Panel
             'canManage' => self::can(self::MANAGE),
             'healthUrl' => cp_route('porro.index'),
             'nginxUrl' => cp_route('porro.nginx'),
+            'blocklistUrl' => cp_route('porro.list', 'blocklist'),
+            'safelistUrl' => cp_route('porro.list', 'safelist'),
             'urls' => [
                 'block' => cp_route('porro.block'),
                 'unblock' => cp_route('porro.unblock'),
@@ -120,6 +122,31 @@ class Panel
             ],
             'prefill' => filter_var($request->query('safelist'), FILTER_VALIDATE_IP) ?: null,
             ...$this->presenter->blocking(),
+        ];
+    }
+
+    /**
+     * The whole blocklist or safelist.
+     *
+     * @return array<string, mixed>
+     */
+    public function list(Request $request, string $list): array
+    {
+        $entries = $this->presenter->entries($list, (string) $request->query('q', ''), (string) $request->query('filter', 'all'), (int) $request->query('page', 1));
+
+        // Statamic's layout keeps its Inertia page data in $page.
+        $entries['currentPage'] = $entries['page'];
+        unset($entries['page']);
+
+        return [
+            'flash' => self::flash(),
+            'v6' => self::isStatamic6(),
+            'icon' => self::BLOCK_ICON,
+            'canManage' => self::can(self::MANAGE),
+            'blockingUrl' => cp_route('porro.blocking'),
+            'listUrl' => cp_route('porro.list', $list),
+            'remove' => cp_route($list === 'safelist' ? 'porro.unsafelist' : 'porro.unblock'),
+            ...$entries,
         ];
     }
 
