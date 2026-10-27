@@ -1,6 +1,6 @@
 {{-- Statamic 6. Notes and labels are typed by people, so they sit in v-pre too. --}}
 @php($field = 'w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm')
-<div class="max-w-page mx-auto space-y-6">
+<div class="max-w-page mx-auto space-y-6" v-cloak>
     <ui-header title="{{ __('Blocking') }}" icon="{{ $icon }}">
         <template #actions>
             <ui-button href="{{ $healthUrl }}" variant="ghost" text="{{ __('Site Health') }}"></ui-button>

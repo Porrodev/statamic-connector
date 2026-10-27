@@ -13,6 +13,7 @@ use Porro\Core\Activity\Recorder;
 use Porro\Laravel\Activity\Activity;
 use Porro\Laravel\Activity\CloudflareMode;
 use Porro\Laravel\Activity\Confirm;
+use Porro\Statamic\Panel;
 use Statamic\Facades\Role;
 use Statamic\Facades\User;
 use Statamic\Statamic;
@@ -321,4 +322,14 @@ describe('IP details', function () {
         $this->actingAs(admin())->get(cp_route('porro.ip', '1.2.3'))->assertNotFound();
         $this->actingAs(editorWith('access cp'))->get(cp_route('porro.ip', '185.220.101.4'))->assertForbidden();
     });
+});
+
+it('hides each Statamic 6 page until Vue has compiled it, so the raw markup never flashes', function () {
+    if (! Panel::isStatamic6()) {
+        $this->markTestSkipped('Statamic 6 renders addon pages before Vue mounts; 5 hides the whole app.');
+    }
+
+    foreach ([cp_route('porro.index'), cp_route('porro.blocking'), cp_route('porro.nginx'), cp_route('porro.ip', '185.220.101.4')] as $url) {
+        expect(pageHtml($this->actingAs(admin())->get($url)->assertOk()))->toContain('<div class="max-w-page mx-auto space-y-6" v-cloak>');
+    }
 });

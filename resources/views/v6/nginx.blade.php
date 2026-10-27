@@ -1,6 +1,6 @@
 {{-- Statamic 6. Server names come from the hosts, so they sit in v-pre too. --}}
 @php($code = 'text-xs bg-gray-50 dark:bg-gray-900 rounded-lg p-3 overflow-x-auto')
-<div class="max-w-page mx-auto space-y-6">
+<div class="max-w-page mx-auto space-y-6" v-cloak>
     <div>
         <a href="{{ $blockingUrl }}" class="text-sm underline underline-offset-2">← {{ __('Blocking') }}</a>
         <ui-header title="{{ __('Set up nginx') }}" icon="{{ $icon }}"></ui-header>

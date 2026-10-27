@@ -1,6 +1,6 @@
 {{-- Statamic 6. Hostnames, user agents and paths come from visitors and DNS, so they sit in v-pre. --}}
 @php($tones = ['danger' => 'red', 'warning' => 'amber', 'neutral' => 'default'])
-<div class="max-w-page mx-auto space-y-6">
+<div class="max-w-page mx-auto space-y-6" v-cloak>
     <div>
         <a href="{{ $healthUrl }}" class="text-sm underline underline-offset-2">← {{ __('Site Health') }}</a>
         <h1 v-pre class="font-mono text-2xl font-medium mt-1">{{ $details['ip'] }}</h1>
