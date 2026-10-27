@@ -17,9 +17,9 @@
     ],
     "require": {
         "php": "^8.2",
-        "porro/laravel-connector": "dev-claude/porro-page as 0.3.0",
+        "porro/laravel-connector": "dev-claude/cloudflare as 0.3.0",
         "statamic/cms": "^5.0|^6.0",
-        "porro/php-core": "dev-claude/activity-core as 0.3.0"
+        "porro/php-core": "dev-claude/cloudflare as 0.3.0"
     },
     "autoload": {
         "psr-4": {
