@@ -46,6 +46,7 @@ class StatamicConnectorServiceProvider extends ServiceProvider
                 Route::get('/', [SiteHealthController::class, 'index'])->name('index');
                 Route::post('refresh', [SiteHealthController::class, 'refresh'])->name('refresh');
                 Route::get('blocking', [BlockingController::class, 'index'])->name('blocking');
+                Route::get('blocking/nginx', [BlockingController::class, 'nginx'])->name('nginx');
                 Route::post('blocking/block', [BlockingController::class, 'block'])->name('block');
                 Route::post('blocking/unblock', [BlockingController::class, 'unblock'])->name('unblock');
                 Route::post('blocking/safelist', [BlockingController::class, 'safelist'])->name('safelist');

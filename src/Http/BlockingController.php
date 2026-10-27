@@ -29,6 +29,13 @@ class BlockingController extends CpController
         return view('porro::blocking', $panel->blocking($request));
     }
 
+    public function nginx(Request $request, Panel $panel): View
+    {
+        Panel::authorize(Panel::VIEW);
+
+        return view('porro::nginx', $panel->nginx($request));
+    }
+
     public function block(Request $request, Activity $activity): RedirectResponse
     {
         Panel::authorize(Panel::MANAGE);
