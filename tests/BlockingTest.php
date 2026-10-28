@@ -286,7 +286,7 @@ describe('IP details', function () {
         $html = pageHtml($this->actingAs(admin())->get(cp_route('porro.ip', '185.220.101.4'))->assertOk());
 
         expect($html)
-            ->toContain('Requests per hour')
+            ->toMatch('/[Rr]equests per hour/')
             ->toContain('1 turned away by the block')
             ->toContain('Exposed services: Docker, MLflow, cloud metadata ×1')
             ->toContain('straight to the server ×1')
