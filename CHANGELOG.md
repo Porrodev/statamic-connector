@@ -1,7 +1,7 @@
 # Changelog
 
 
-## Unreleased
+## 0.3.4 - 2026-10-28
 
 - Requires `porro/laravel-connector` and `porro/php-core` 0.3.5. A suspicious request no longer touches the database: it appends a line to `storage/porro/activity.buf` on its server, and the lines are recorded in batches, every minute by the scheduler and before the Activity, IP and Site health pages read. Counts stay exact during a flood. `PORRO_ACTIVITY_BUFFER=false` records each request straight away, as happens anyway where storage can't be written or on Lambda (Vapor).
 ## 0.3.3 - 2026-10-28
