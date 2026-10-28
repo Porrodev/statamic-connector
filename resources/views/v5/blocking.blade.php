@@ -35,14 +35,9 @@
             @endif
         </p>
         @if ($cloudflare['connected'])
-            <p class="text-gray-700">{{ __('Blocked at the edge, before traffic reaches the server · zone :zone · list porro_blocklist', ['zone' => $cloudflare['zone']]) }}@if ($cloudflare['result'] && $cloudflare['result']['shared']) · {{ trans_choice(':count already blocked by another site|:count already blocked by other sites', $cloudflare['result']['shared'], ['count' => $cloudflare['result']['shared']]) }}@endif</p>
-        @elseif ($cloudflare['configured'])
-            <p class="text-gray-700 mb-2">{{ __('Run this on the server to find the zone, create the porro_blocklist list and add the rule next to your existing ones:') }}</p>
-            <pre v-pre class="text-xs bg-gray-200 rounded p-2 overflow-x-auto">php please porro:cloudflare connect</pre>
+            <p class="text-gray-700">{{ __('Blocked at the edge, before traffic reaches the server · zone :zone · list porro_blocklist', ['zone' => $cloudflare['zone']]) }}@if ($cloudflare['result'] && $cloudflare['result']['shared']) · {{ trans_choice(':count already blocked by another site|:count already blocked by other sites', $cloudflare['result']['shared'], ['count' => $cloudflare['result']['shared']]) }}@endif · <a href="{{ $cloudflareUrl }}" class="text-blue hover:text-blue-800">{{ __('Setup') }} &rarr;</a></p>
         @else
-            <p class="text-gray-700 mb-2">{{ __('Blocks at Cloudflare’s edge for sites behind it. Create a token with Account Filter Lists Edit, Zone WAF Edit and Zone Read, then:') }}</p>
-            <pre v-pre class="text-xs bg-gray-200 rounded p-2 overflow-x-auto">PORRO_CLOUDFLARE_TOKEN=your-token-here
-php please porro:cloudflare connect</pre>
+            <p class="text-gray-700">{{ __('For sites behind Cloudflare: blocks at Cloudflare’s edge, before traffic reaches the server. Three steps, and no terminal needed.') }} <a href="{{ $cloudflareUrl }}" class="text-blue hover:text-blue-800">{{ $cloudflare['configured'] ? __('Finish setting up') : __('Set up Cloudflare') }} &rarr;</a></p>
         @endif
         @if ($cloudflare['error'])
             <p v-pre class="text-red-500 mt-1">{{ $cloudflare['error'] }}</p>

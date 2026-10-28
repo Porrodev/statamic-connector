@@ -68,7 +68,7 @@ Also free and on the site itself. IP addresses never leave it. The rules are the
 - **The Blocking page:** where blocks are enforced, the newest of the blocklist and safelist (each searchable on its own page, 50 at a time), and what's always protected.
 - **Where blocks are enforced:**
   - **In the app:** blocked IPs get a plain 403 before Statamic runs. On by default; `PORRO_BLOCK_APP=false` turns it off.
-  - **At Cloudflare's edge:** set `PORRO_CLOUDFLARE_TOKEN` (a token with Account Filter Lists Edit, Zone WAF Edit and Zone Read) and run `php artisan porro:cloudflare connect`. It adds one rule next to your existing ones, and only production syncs.
+  - **At Cloudflare's edge:** open **Porro → Blocking → Set up Cloudflare** and follow three steps. Create a token with Zone WAF Rules: Edit and Zone: Read on the site's domain, plus Account Rule Lists: Edit on the account. Set it as `PORRO_CLOUDFLARE_TOKEN`, then press Connect (or run `php please porro:cloudflare connect`). It adds one rule next to your existing ones, and only production syncs. The `porro_blocklist` list belongs to the whole Cloudflare account, so every site you connect on that account shares its blocks.
   - **In nginx:** `PORRO_BLOCK_NGINX=true`, then **Blocking → Set up nginx** walks through three steps with this site's real paths and shows how far each server has got.
 - **Always protected:** Cloudflare, Laravel Forge and its health checks, Google's and Bing's published crawler ranges, and private addresses can't be blocked; open each on the Blocking page to see its ranges and why. Not on Forge? `PORRO_PROTECT_FORGE=false`. Happy to block a crawler? `PORRO_PROTECT_CRAWLERS=false`. Blocks of your own IP or very wide ranges are refused too.
 

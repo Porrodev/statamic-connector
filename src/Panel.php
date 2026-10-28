@@ -112,6 +112,7 @@ class Panel
             'canManage' => self::can(self::MANAGE),
             'healthUrl' => cp_route('porro.index'),
             'nginxUrl' => cp_route('porro.nginx'),
+            'cloudflareUrl' => cp_route('porro.cloudflare'),
             'blocklistUrl' => cp_route('porro.list', 'blocklist'),
             'safelistUrl' => cp_route('porro.list', 'safelist'),
             'urls' => [
@@ -185,6 +186,23 @@ class Panel
             'icon' => self::BLOCK_ICON,
             'blockingUrl' => cp_route('porro.blocking'),
             ...$this->presenter->nginx((string) $request->server('REMOTE_ADDR')),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function cloudflare(): array
+    {
+        return [
+            'flash' => self::flash(),
+            'v6' => self::isStatamic6(),
+            'icon' => self::BLOCK_ICON,
+            'canManage' => self::can(self::MANAGE),
+            'blockingUrl' => cp_route('porro.blocking'),
+            'connectUrl' => cp_route('porro.cloudflare.connect'),
+            ...$this->presenter->cloudflare(),
+            'command' => 'php please porro:cloudflare connect',
         ];
     }
 
