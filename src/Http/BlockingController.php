@@ -7,9 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\View\View;
 use Porro\Core\Activity\Blocklist;
+use Porro\Core\Activity\CloudflareError;
 use Porro\Core\Activity\Entry;
 use Porro\Core\Activity\Refused;
 use Porro\Laravel\Activity\Activity;
+use Porro\Laravel\Activity\CloudflareMode;
 use Porro\Laravel\SiteHealth;
 use Porro\Statamic\Panel;
 use Statamic\Facades\User;
@@ -42,6 +44,38 @@ class BlockingController extends CpController
         Panel::authorize(Panel::VIEW);
 
         return view('porro::nginx', $panel->nginx($request));
+    }
+
+    public function cloudflare(Panel $panel): View
+    {
+        Panel::authorize(Panel::VIEW);
+
+        return view('porro::cloudflare', $panel->cloudflare());
+    }
+
+    /**
+     * Connect from the page, so nobody needs a terminal: finds the zone,
+     * creates or reuses the list and adds the rule, then syncs.
+     */
+    public function cloudflareConnect(CloudflareMode $cloudflare): RedirectResponse
+    {
+        Panel::authorize(Panel::MANAGE);
+
+        if (! $cloudflare->configured()) {
+            return back()->with('error', __('Set PORRO_CLOUDFLARE_TOKEN first, then connect.'));
+        }
+
+        try {
+            $connection = $cloudflare->connect();
+        } catch (CloudflareError $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        $result = $cloudflare->sync();
+
+        return back()->with('success', $result !== null
+            ? __('Connected to :zone and synced the blocklist.', ['zone' => $connection['zone_name']])
+            : __('Connected to :zone. Only production syncs the blocklist.', ['zone' => $connection['zone_name']]));
     }
 
     public function block(Request $request, Activity $activity): RedirectResponse
