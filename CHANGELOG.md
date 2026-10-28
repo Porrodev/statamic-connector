@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1 - 2026-10-28
+
+- The Blocking page's nginx row said setup takes "two one-time steps on each server". It takes three: one for the site and two on each server, as the setup page says.
+- The README shows Activity, IP details and Blocking, with screenshots.
+
 ## 0.3.0 - 2026-10-27
 
 - **The activity table is ranked by what's known about each IP**, with badges next to it: Spamhaus, Tor, Cloudflare risk, Fake crawler, Hosting, or "Scanner, low risk" for research scanners, which go last.
