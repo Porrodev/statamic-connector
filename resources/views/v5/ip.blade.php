@@ -60,27 +60,75 @@
     @endforelse
 </div>
 
-<h2 class="mb-2 font-bold">{{ __('What it did here') }} <span class="font-normal text-gray-600 text-sm">· {{ __('signals per hour, last 48 hours') }}</span></h2>
+{{-- Paths, hosts and user agents come from the visitor: v-pre, so Vue never reads them as templates. --}}
+<h2 class="mb-2 font-bold">{{ __('What it did here') }} <span class="font-normal text-gray-600 text-sm">· {{ __('requests per hour, last 48 hours') }}</span></h2>
 <div class="card mb-6 text-sm">
     @if ($details['activity'])
+        @php($did = $details['activity'])
         <div class="flex items-end" style="gap: 2px; height: 44px" aria-hidden="true">
-            @foreach ($details['activity']['hours'] as $n)
-                <span style="flex: 1; border-radius: 1px; height: {{ $n ? max(6, (int) round($n / $details['activity']['peak'] * 44)) : 2 }}px; background: {{ $n > 10 ? '#dc2626' : ($n > 0 ? '#ea8033' : '#e5e7eb') }}"></span>
+            @foreach ($did['hours'] as $n)
+                <span style="flex: 1; border-radius: 1px; height: {{ $n ? max(6, (int) round($n / $did['peak'] * 44)) : 2 }}px; background: {{ $n > 10 ? '#dc2626' : ($n > 0 ? '#ea8033' : '#e5e7eb') }}"></span>
             @endforeach
         </div>
         <div class="flex justify-between text-xs text-gray-700 mt-1 mb-3"><span>{{ __('48 h ago') }}</span><span>{{ __('now') }}</span></div>
+        @foreach ($did['summary'] as $label => $value)
+            <div class="flex py-2 border-t">
+                <span class="text-gray-700" style="width: 8rem; flex: none">{{ __($label) }}</span>
+                <span v-pre style="overflow-wrap: anywhere">{{ $value }}</span>
+            </div>
+        @endforeach
+        @if ($did['direct'])
+            <p class="text-xs text-orange mt-3">{{ __('Some of its requests came straight to the server’s own address, not through Cloudflare. Blocking at Cloudflare won’t stop those: block in the app or in nginx, or let only Cloudflare reach the server at its firewall.') }}</p>
+        @endif
+        @unless ($did['flagged'])
+            <p class="text-xs text-gray-700 mt-3">{{ __('Recorded, but under the thresholds that flag an IP. Only its suspicious requests are counted until it’s flagged.') }}</p>
+        @endunless
+    @else
+        <p>{{ __('Nothing recorded from this IP in the last 48 hours.') }}</p>
+    @endif
+</div>
+
+@if ($details['activity'] && $details['activity']['paths'])
+    <h2 class="mb-2 font-bold">{{ __('Paths it asked for') }} <span class="font-normal text-gray-600 text-sm">· {{ __('requests, last answer') }}</span></h2>
+    <div class="card mb-6 text-sm">
+        @foreach ($details['activity']['paths'] as $p)
+            <div class="flex py-1 font-mono text-xs {{ $loop->first ? '' : 'border-t' }}">
+                <span v-pre class="flex-1" style="overflow-wrap: anywhere">{{ $p['path'] }}</span>
+                <span class="text-gray-700 mx-3">×{{ number_format($p['count']) }}</span>
+                <span class="{{ $p['status'] >= 200 && $p['status'] < 300 ? 'text-red-500' : 'text-gray-700' }}">{{ $p['status'] ?: '—' }}</span>
+            </div>
+        @endforeach
+        @if ($details['activity']['otherPaths'])
+            <p class="text-xs text-gray-700 mt-2">{{ trans_choice('…and :count more request to other paths.|…and :count more requests to other paths.', $details['activity']['otherPaths'], ['count' => number_format($details['activity']['otherPaths'])]) }}</p>
+        @endif
+    </div>
+@endif
+
+@if ($details['activity'] && $details['activity']['agents'])
+    <h2 class="mb-2 font-bold">{{ __('User agents') }}</h2>
+    <div class="card mb-6 text-sm">
+        @foreach ($details['activity']['agents'] as $a)
+            <div class="flex py-1 font-mono text-xs {{ $loop->first ? '' : 'border-t' }}">
+                <span v-pre class="flex-1" style="overflow-wrap: anywhere">{{ $a['agent'] }}</span>
+                <span class="text-gray-700 ml-3">×{{ number_format($a['count']) }}</span>
+            </div>
+        @endforeach
+    </div>
+@endif
+
+@if ($details['activity'] && $details['activity']['requests'])
+    <h2 class="mb-2 font-bold">{{ __('Latest requests') }}</h2>
+    <div class="card mb-6 text-sm">
         @foreach ($details['activity']['requests'] as $r)
-            <div class="flex py-1 font-mono text-xs border-t">
+            <div class="flex py-1 font-mono text-xs {{ $loop->first ? '' : 'border-t' }}">
                 <span class="text-gray-700 mr-3" style="width: 3rem">{{ $r['method'] }}</span>
                 <span v-pre class="flex-1" style="overflow-wrap: anywhere">{{ $r['path'] }}</span>
                 <span class="{{ $r['status'] >= 200 && $r['status'] < 300 ? 'text-red-500' : 'text-gray-700' }} mx-3">{{ $r['status'] ?: '—' }}</span>
                 <span class="text-gray-700">{{ $r['time'] }}</span>
             </div>
         @endforeach
-    @else
-        <p>{{ __('Nothing flagged from this IP in the last 48 hours.') }}</p>
-    @endif
-</div>
+    </div>
+@endif
 
 <h2 class="mb-2 font-bold">{{ __('Reputation') }} <span class="font-normal text-gray-600 text-sm">· AbuseIPDB</span></h2>
 <div class="card mb-6 text-sm">

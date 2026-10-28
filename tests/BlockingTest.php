@@ -3,7 +3,6 @@
 use Facades\Statamic\Updater\UpdatesOverview;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Factory;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Porro\Core\Activity\AbuseIpdb;
@@ -195,7 +194,7 @@ it('shows Cloudflare WAF mode on the Blocking page', function () {
     expect($page())->toContain('Token set, not connected')->toContain('Finish setting up');
 
     $this->app['env'] = 'production';
-    Cache::forever(CloudflareMode::STATE, [
+    Activity::store()->forever(CloudflareMode::STATE, [
         'connection' => ['zone_name' => 'dogearbooks.example'],
         'synced_at' => time() - 120,
         'result' => ['added' => 1, 'removed' => 0, 'shared' => 2],
@@ -203,7 +202,7 @@ it('shows Cloudflare WAF mode on the Blocking page', function () {
     ]);
     expect($page())->toContain('Synced 2 minutes ago')->toContain('zone dogearbooks.example')->toContain('2 already blocked by other sites');
 
-    Cache::forever(CloudflareMode::STATE, [
+    Activity::store()->forever(CloudflareMode::STATE, [
         'connection' => ['zone_name' => 'dogearbooks.example'],
         'error' => 'Cloudflare refused the token {{ constructor }}',
     ]);
@@ -245,7 +244,7 @@ describe('nginx setup', function () {
     });
 
     it('counts each step done across servers', function () {
-        Cache::forever(NginxServers::KEY, [
+        Activity::store()->forever(NginxServers::KEY, [
             'web-1' => ['state' => 'loaded', 'checked_at' => time() - 30, 'reloaded' => time() - 60],
             'web-2' => ['state' => 'waiting_reload', 'checked_at' => time() - 40],
         ]);
@@ -277,6 +276,25 @@ describe('IP details', function () {
         foreach (['/.env', '/.git/config', '/{{ constructor }}.sql'] as $path) {
             $recorder->record('185.220.101.4', Recorder::PROBE, 'GET', $path, 404, country: 'DE', userAgent: 'Mozilla/5.0 (compatible; Googlebot/2.1) {{ constructor }}');
         }
+    });
+
+    it('sums up what it did, with every visitor-sent value out of Vue’s reach', function () {
+        $recorder = app(Activity::class)->recorder();
+        $recorder->record('185.220.101.4', Recorder::PROBE, 'GET', '/containers/json', 404, category: 'infrastructure', host: '{{ constructor }}.example.com', proxied: false, userAgent: 'zgrab/0.x');
+        $recorder->turnedAway('185.220.101.4', 'GET', '/images/json', 'example.com', 'zgrab/0.x', true);
+
+        $html = pageHtml($this->actingAs(admin())->get(cp_route('porro.ip', '185.220.101.4'))->assertOk());
+
+        expect($html)
+            ->toContain('Requests per hour')
+            ->toContain('1 turned away by the block')
+            ->toContain('Exposed services: Docker, MLflow, cloud metadata ×1')
+            ->toContain('straight to the server ×1')
+            ->toContain('Blocking at Cloudflare won’t stop those')
+            ->toContain('Paths it asked for')
+            ->toContain('zgrab/0.x')
+            // Every {{ … }} a visitor sent is inside a v-pre element.
+            ->and(preg_match_all('/\{\{ constructor \}\}/', $html))->toBe(preg_match_all('/<span v-pre[^>]*>[^<]*\{\{ constructor \}\}/', $html));
     });
 
     it('opens from the activity table and explains a fake crawler', function () {
