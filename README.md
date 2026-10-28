@@ -54,19 +54,27 @@ Results are cached for five minutes, and the public data behind them for between
 
 ## Suspicious activity and blocking
 
-Also free and on the site itself. IP addresses never leave it.
+Also free and on the site itself. IP addresses never leave it. The rules are the [Laravel connector's](https://github.com/Porrodev/laravel-connector#suspicious-activity-and-blocking), so its README has every setting.
 
-- **What Site Health shows:**
-  - probes for files like `/.env` and `/.git`
-  - failed control panel logins
-  - bursts of 404s and form floods
-  - each flagged IP with its rough country, and **Block 7 days**, **Block permanently** and **Safelist** buttons
+![Porro → Site Health in the Statamic control panel: the suspicious activity summary and the IPs worth a look, each with Block 7 days, Block permanently and Safelist buttons](docs/images/statamic-activity.png)
+
+- **What's watched:** probes for files like `/.env`, `/.git` and `wp-login.php`, failed control panel logins, bursts of 404s and form floods. Counts are kept in the cache for 48 hours, and usernames only as hashes.
+- **Site Health lists the IPs worth a look,** worst first, with badges for Tor exits, Spamhaus DROP, hosting networks and research scanners, and **Block 7 days**, **Block permanently** and **Safelist** buttons. Each one asks first, in a confirmation that says what will happen and for how long.
 - **Exposed files:** if `/.env` or `/.git` ever answers, that's raised as **Act now**.
-- **The Blocking page:**
-  - **Lists:** the blocklist and safelist, and the ranges that can never be blocked: Cloudflare, Laravel Forge and its health checks, private addresses.
-  - **Refusals:** a block that would take the site down is refused, with the reason. That covers those ranges, your own IP and very wide ranges.
-- **How blocks are enforced:** blocked IPs get a plain 403 before Statamic runs. With `PORRO_BLOCK_NGINX=true`, nginx can block them too, and the page shows the two setup steps for each server.
-- **Production only:** activity is recorded in production only (`PORRO_ACTIVITY=true` to record elsewhere).
+- **IP details:** click an IP for its network, a reverse-DNS hostname checked both ways, what it did here over 48 hours, and a plain note when something claiming to be Googlebot or Bingbot isn't. With `PORRO_ABUSEIPDB_KEY`, a button checks AbuseIPDB; that's the one lookup that sends the IP anywhere, so it only runs when clicked.
+
+![IP details in the Statamic control panel: an address pretending to be Googlebot, caught by its hostname, with buttons to block it or its range](docs/images/statamic-ip-details.png)
+
+- **The Blocking page:** where blocks are enforced, the newest of the blocklist and safelist (each searchable on its own page, 50 at a time), and what's always protected.
+- **Where blocks are enforced:**
+  - **In the app:** blocked IPs get a plain 403 before Statamic runs. On by default; `PORRO_BLOCK_APP=false` turns it off.
+  - **At Cloudflare's edge:** set `PORRO_CLOUDFLARE_TOKEN` (a token with Account Filter Lists Edit, Zone WAF Edit and Zone Read) and run `php artisan porro:cloudflare connect`. It adds one rule next to your existing ones, and only production syncs.
+  - **In nginx:** `PORRO_BLOCK_NGINX=true`, then **Blocking → Set up nginx** walks through three steps with this site's real paths and shows how far each server has got.
+- **Always protected:** Cloudflare, Laravel Forge and its health checks, Google's and Bing's published crawler ranges, and private addresses can't be blocked; open each on the Blocking page to see its ranges and why. Not on Forge? `PORRO_PROTECT_FORGE=false`. Happy to block a crawler? `PORRO_PROTECT_CRAWLERS=false`. Blocks of your own IP or very wide ranges are refused too.
+
+![The Blocking page in the Statamic control panel: blocking in the app, at Cloudflare and in nginx, above the blocklist](docs/images/statamic-blocking.png)
+
+- **Production only:** activity is recorded in production only (`PORRO_ACTIVITY=true` to record elsewhere). Blocks apply everywhere.
 - **Static caching:** pages served from Statamic's static cache never reach the app, so traffic counts run low. Probes and logins are always caught.
 - **Country:** comes from Cloudflare when the site is behind it. Otherwise it comes from [DB-IP](https://db-ip.com)'s free country file, downloaded monthly to `storage/porro`.
 
