@@ -20,9 +20,9 @@
     ],
     "require": {
         "php": "^8.2",
-        "porro/laravel-connector": "^0.3.4",
+        "porro/laravel-connector": "^0.3.5",
         "statamic/cms": "^5.0|^6.0",
-        "porro/php-core": "^0.3.4"
+        "porro/php-core": "^0.3.5"
     },
     "autoload": {
         "psr-4": {

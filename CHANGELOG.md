@@ -1,5 +1,9 @@
 # Changelog
 
+
+## Unreleased
+
+- Requires `porro/laravel-connector` and `porro/php-core` 0.3.5. A suspicious request no longer touches the database: it appends a line to `storage/porro/activity.buf` on its server, and the lines are recorded in batches, every minute by the scheduler and before the Activity, IP and Site health pages read. Counts stay exact during a flood. `PORRO_ACTIVITY_BUFFER=false` records each request straight away, as happens anyway where storage can't be written or on Lambda (Vapor).
 ## 0.3.3 - 2026-10-28
 
 - **Porro → Blocking → Set up Cloudflare**: a setup page with three steps that tick themselves off. It lists the token's two permission policies as Cloudflare's dashboard names them (Zone WAF Rules: Edit and Zone: Read on the site's domain, Account Rule Lists: Edit on the account), the `.env` line with a copy button, and a **Connect to Cloudflare** button for users who can manage blocking. It says plainly that `porro_blocklist` is shared by every site on the Cloudflare account.

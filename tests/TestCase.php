@@ -53,6 +53,9 @@ abstract class TestCase extends Orchestra
         $app['config']->set('statamic.users.repositories.file.paths.groups', $users.'/groups.yaml');
         $app['config']->set('cache.default', 'array');
         $app['config']->set('porro.url', 'https://porro.test');
+
+        // A buffer of its own per test, so no line leaks into the next.
+        $app['config']->set('porro.activity.buffer', sys_get_temp_dir().'/porro-test-'.bin2hex(random_bytes(6)).'/activity.buf');
         $app['config']->set('statamic.users.repository', 'file');
         $app['config']->set('statamic.stache.watcher', false);
         $app['config']->set('statamic.editions.pro', true);
