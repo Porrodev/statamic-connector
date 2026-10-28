@@ -1,6 +1,6 @@
 {
     "name": "porro/statamic-connector",
-    "description": "Site health for Statamic: security advisories, end-of-life PHP, Laravel and Statamic versions, updates and the scheduler, in a control panel utility and dashboard widget. Free; connect Porro to add uptime, SSL, domain and server checks.",
+    "description": "Site health, suspicious activity and IP blocking for Statamic 5–6, in the control panel: security advisories, end-of-life PHP, Laravel and Statamic, updates and the scheduler, plus probes, failed logins and form floods, blocked in the app, at Cloudflare or in nginx. Free; connect Porro to add uptime, SSL, domain and server checks.",
     "type": "library",
     "license": "MIT",
     "homepage": "https://porro.dev",
@@ -13,6 +13,9 @@
         "end of life",
         "updates",
         "monitoring",
+        "blocking",
+        "firewall",
+        "cloudflare",
         "porro"
     ],
     "require": {
@@ -29,7 +32,7 @@
     "extra": {
         "statamic": {
             "name": "Porro Site Health",
-            "description": "Security advisories, end-of-life versions, updates and the scheduler, checked inside your site. Connect Porro for uptime, SSL, domain and server checks too."
+            "description": "Site health, suspicious activity and IP blocking in your control panel: advisories, end-of-life versions and updates, plus probes and failed logins, blocked in the app, at Cloudflare or in nginx. Free; connect Porro for uptime, SSL, domain and server checks too."
         },
         "laravel": {
             "providers": [
