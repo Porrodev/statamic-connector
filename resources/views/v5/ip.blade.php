@@ -121,7 +121,7 @@
     <div class="card mb-6 text-sm">
         @foreach ($details['activity']['requests'] as $r)
             <div class="flex py-1 font-mono text-xs {{ $loop->first ? '' : 'border-t' }}">
-                <span class="text-gray-700 mr-3" style="width: 3rem">{{ $r['method'] }}</span>
+                <span v-pre class="text-gray-700 mr-3" style="width: 3rem">{{ $r['method'] }}</span>
                 <span v-pre class="flex-1" style="overflow-wrap: anywhere">{{ $r['path'] }}</span>
                 <span class="{{ $r['status'] >= 200 && $r['status'] < 300 ? 'text-red-500' : 'text-gray-700' }} mx-3">{{ $r['status'] ?: '—' }}</span>
                 <span class="text-gray-700">{{ $r['time'] }}</span>

@@ -127,7 +127,7 @@
             <ui-card>
                 @foreach ($details['activity']['requests'] as $r)
                     <div class="flex gap-3 py-1.5 font-mono text-xs {{ $loop->first ? '' : 'border-t border-gray-200 dark:border-gray-800' }}">
-                        <span class="text-gray-600" style="width: 3rem">{{ $r['method'] }}</span>
+                        <span v-pre class="text-gray-600" style="width: 3rem">{{ $r['method'] }}</span>
                         <span v-pre class="flex-1 min-w-0 break-all">{{ $r['path'] }}</span>
                         <span style="{{ $r['status'] >= 200 && $r['status'] < 300 ? 'color: rgb(220 38 38)' : '' }}" class="text-gray-600">{{ $r['status'] ?: '—' }}</span>
                         <span class="text-gray-600">{{ $r['time'] }}</span>
