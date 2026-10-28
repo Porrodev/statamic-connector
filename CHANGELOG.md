@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2 - 2026-10-28
+
+- The package's description covers suspicious activity and IP blocking as well as site health, on Packagist and in the Statamic Marketplace.
+
 ## 0.3.1 - 2026-10-28
 
 - The Blocking page's nginx row said setup takes "two one-time steps on each server". It takes three: one for the site and two on each server, as the setup page says.
