@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.3 - 2026-10-28
+
+- **Porro → Blocking → Set up Cloudflare**: a setup page with three steps that tick themselves off. It lists the token's two permission policies as Cloudflare's dashboard names them (Zone WAF Rules: Edit and Zone: Read on the site's domain, Account Rule Lists: Edit on the account), the `.env` line with a copy button, and a **Connect to Cloudflare** button for users who can manage blocking. It says plainly that `porro_blocklist` is shared by every site on the Cloudflare account.
+- The IP details page sums up what an IP did over 48 hours, flagged or not:
+  - requests per hour, total requests, and how many a block turned away;
+  - what its probes were after;
+  - its top paths with their last status, and its user agents;
+  - its hosts and methods. On Statamic 5 and 6; every value a visitor sends stays out of Vue's reach (`v-pre`).
+- It also shows requests through Cloudflare versus straight to the server, saying when blocking at Cloudflare won't stop them.
+- Through laravel-connector 0.3.4, activity survives deploys in Porro's own `porro_cache` table (run `php artisan migrate`), and floods are bounded.
+- Requires `porro/laravel-connector` 0.3.4 and `porro/php-core` 0.3.4.
+
 ## 0.3.2 - 2026-10-28
 
 - The package's description covers suspicious activity and IP blocking as well as site health, on Packagist and in the Statamic Marketplace.
