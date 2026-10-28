@@ -72,7 +72,7 @@ php please porro:cloudflare connect</pre>
                             {{ trans_choice(':loaded of :count server loaded|:loaded of :count servers loaded', count($enforcement['servers']), ['loaded' => $loaded, 'count' => count($enforcement['servers'])]) }} ·
                             <a href="{{ $nginxUrl }}" class="underline underline-offset-2">{{ __('Setup and servers') }} →</a>
                         @else
-                            {{ __('For sites not behind Cloudflare, or as well as it. Two one-time steps on each server.') }}
+                            {{ __('For sites not behind Cloudflare, or as well as it. Three one-time steps: one for the site, two on each server.') }}
                             <a href="{{ $nginxUrl }}" class="underline underline-offset-2">{{ __('Set up nginx') }} →</a>
                         @endif
                     </p>
