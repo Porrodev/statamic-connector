@@ -8,5 +8,5 @@
     </ul>
     <p>{{ __('Add the site in Porro, then connect it with its site key:') }}</p>
     <pre class="text-xs p-2 rounded overflow-x-auto" style="background: rgba(127,127,127,.12)"><code>{{ $commands['connect'] }}</code></pre>
-    <p><a href="https://porro.dev" target="_blank" rel="noopener" class="underline">{{ __('Find out more at porro.dev') }}</a></p>
+    <p><a href="https://porro.dev/?utm_source=statamic-connector&amp;utm_medium=control-panel&amp;utm_campaign=connectors" target="_blank" rel="noopener" class="underline">{{ __('Find out more at porro.dev') }}</a></p>
 </div>

@@ -2,7 +2,7 @@
 
 Site health for Statamic 5 and 6, inside the control panel. It checks the site for the things that quietly go wrong between projects (security advisories in your Composer packages, PHP, Laravel and Statamic versions running out of security support, updates waiting, a scheduler that never runs) and tells you what to do about each.
 
-It's free and works on its own. If you use [Porro](https://porro.dev) to look after your sites, connecting it adds what can only be seen from outside: uptime, SSL certificates, domain expiry and the server's operating system.
+It's free and works on its own. If you use [Porro](https://porro.dev/?utm_source=statamic-connector&utm_medium=readme&utm_campaign=connectors) to look after your sites, connecting it adds what can only be seen from outside: uptime, SSL certificates, domain expiry and the server's operating system.
 
 ![Utilities → Porro Site Health on a Statamic 6 site that isn't connected to Porro: a migration not run, the scheduler not running and three failed jobs, each with the command that fixes it](docs/images/statamic-site-health.png)
 
@@ -81,7 +81,7 @@ Also free and on the site itself. IP addresses never leave it. The rules are the
 
 ## Connect Porro (optional)
 
-Porro watches every site you look after from outside: uptime from several regions, SSL and domain expiry, the server's OS and security updates, with alerts by email or Slack. It's a separate service with its own account; see [porro.dev](https://porro.dev) for plans. Nothing in this addon needs it, and nothing is sent to Porro until you connect. Add the site in Porro, then:
+Porro watches every site you look after from outside: uptime from several regions, SSL and domain expiry, the server's OS and security updates, with alerts by email or Slack. It's a separate service with its own account; see [porro.dev](https://porro.dev/?utm_source=statamic-connector&utm_medium=readme&utm_campaign=connectors) for plans. Nothing in this addon needs it, and nothing is sent to Porro until you connect. Add the site in Porro, then:
 
 ```bash
 php please porro:connect <site key>
