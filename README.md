@@ -1,6 +1,6 @@
 # Porro Site Health for Statamic
 
-![Porro for Statamic: know it's healthy, keep bad bots out. Site health, suspicious activity and blocking in the control panel, free](https://raw.githubusercontent.com/Porrodev/statamic-connector/main/docs/images/hero.png)
+![Site health for Statamic, free in the control panel: health, activity and blocking, beside the real Porro Site Health page](https://raw.githubusercontent.com/Porrodev/statamic-connector/main/docs/images/header.png)
 
 Site health for Statamic 5 and 6, inside the control panel. It checks the site for the things that quietly go wrong between projects (security advisories in your Composer packages, PHP, Laravel and Statamic versions running out of security support, updates waiting, a scheduler that never runs) and tells you what to do about each.
 
