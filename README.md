@@ -1,10 +1,12 @@
 # Porro Site Health for Statamic
 
+![Porro for Statamic: know it's healthy, keep bad bots out. Site health, suspicious activity and blocking in the control panel, free](https://raw.githubusercontent.com/Porrodev/statamic-connector/main/docs/images/hero.png)
+
 Site health for Statamic 5 and 6, inside the control panel. It checks the site for the things that quietly go wrong between projects (security advisories in your Composer packages, PHP, Laravel and Statamic versions running out of security support, updates waiting, a scheduler that never runs) and tells you what to do about each.
 
 It's free and works on its own. If you use [Porro](https://porro.dev/?utm_source=statamic-connector&utm_medium=readme&utm_campaign=connectors) to look after your sites, connecting it adds what can only be seen from outside: uptime, SSL certificates, domain expiry and the server's operating system.
 
-![Utilities → Porro Site Health on a Statamic 6 site that isn't connected to Porro: a migration not run, the scheduler not running and three failed jobs, each with the command that fixes it](docs/images/statamic-site-health.png)
+![Utilities → Porro Site Health on a Statamic 6 site that isn't connected to Porro: a migration not run, the scheduler not running and three failed jobs, each with the command that fixes it](https://raw.githubusercontent.com/Porrodev/statamic-connector/main/docs/images/statamic-site-health.png)
 
 ## Install
 
@@ -26,7 +28,7 @@ Add it to `config/statamic/cp.php`:
 
 It lists the five most important issues (`'limit' => 5` to change that) and links to Site Health. It shows the last result rather than running the checks, so the dashboard never waits on them.
 
-<img src="docs/images/statamic-widget.png" alt="The Porro Site Health dashboard widget, listing what needs attention" width="420">
+<img src="https://raw.githubusercontent.com/Porrodev/statamic-connector/main/docs/images/statamic-widget.png" alt="The Porro Site Health dashboard widget, listing what needs attention" width="420">
 
 ### Who can see it
 
@@ -56,7 +58,7 @@ Results are cached for five minutes, and the public data behind them for between
 
 Also free and on the site itself. IP addresses never leave it. The rules are the [Laravel connector's](https://github.com/Porrodev/laravel-connector#suspicious-activity-and-blocking), so its README has every setting.
 
-![Porro → Site Health in the Statamic control panel: the suspicious activity summary and the IPs worth a look, each with Block 7 days, Block permanently and Safelist buttons](docs/images/statamic-activity.png)
+![Porro → Site Health in the Statamic control panel: the suspicious activity summary and the IPs worth a look, each with Block 7 days, Block permanently and Safelist buttons](https://raw.githubusercontent.com/Porrodev/statamic-connector/main/docs/images/statamic-activity.png)
 
 - **What's watched:** probes for files like `/.env`, `/.git` and `wp-login.php`, failed control panel logins, bursts of 404s and form floods. Counts are kept for 48 hours in Porro's own `porro_cache` table, so a deploy's cache clear doesn't wipe them, and usernames only as hashes.
 - **No database writes on a visitor's request:** a suspicious request appends one line to `storage/porro/activity.buf` on its server, and the lines are recorded in batches: every minute by the scheduler, now and then after a suspicious request, and whenever an activity page opens. Flags can lag by up to a minute; blocking is immediate. Where storage can't be written, or on Lambda (Vapor), each request is recorded straight away. `PORRO_ACTIVITY_BUFFER=false` turns batching off.
@@ -64,7 +66,7 @@ Also free and on the site itself. IP addresses never leave it. The rules are the
 - **Exposed files:** if `/.env` or `/.git` ever answers, that's raised as **Act now**.
 - **IP details:** click an IP for its network, a reverse-DNS hostname checked both ways, what it did here over 48 hours, and a plain note when something claiming to be Googlebot or Bingbot isn't. With `PORRO_ABUSEIPDB_KEY`, a button checks AbuseIPDB; that's the one lookup that sends the IP anywhere, so it only runs when clicked.
 
-![IP details in the Statamic control panel: an address pretending to be Googlebot, caught by its hostname, with buttons to block it or its range](docs/images/statamic-ip-details.png)
+![IP details in the Statamic control panel: an address pretending to be Googlebot, caught by its hostname, with buttons to block it or its range](https://raw.githubusercontent.com/Porrodev/statamic-connector/main/docs/images/statamic-ip-details.png)
 
 - **The Blocking page:** where blocks are enforced, the newest of the blocklist and safelist (each searchable on its own page, 50 at a time), and what's always protected.
 - **Where blocks are enforced:**
@@ -73,7 +75,7 @@ Also free and on the site itself. IP addresses never leave it. The rules are the
   - **In nginx:** `PORRO_BLOCK_NGINX=true`, then **Blocking → Set up nginx** walks through three steps with this site's real paths and shows how far each server has got.
 - **Always protected:** Cloudflare, Laravel Forge and its health checks, Google's and Bing's published crawler ranges, and private addresses can't be blocked; open each on the Blocking page to see its ranges and why. Not on Forge? `PORRO_PROTECT_FORGE=false`. Happy to block a crawler? `PORRO_PROTECT_CRAWLERS=false`. Blocks of your own IP or very wide ranges are refused too.
 
-![The Blocking page in the Statamic control panel: blocking in the app, at Cloudflare and in nginx, above the blocklist](docs/images/statamic-blocking.png)
+![The Blocking page in the Statamic control panel: blocking in the app, at Cloudflare and in nginx, above the blocklist](https://raw.githubusercontent.com/Porrodev/statamic-connector/main/docs/images/statamic-blocking.png)
 
 - **Production only:** activity is recorded in production only (`PORRO_ACTIVITY=true` to record elsewhere). Blocks apply everywhere.
 - **Static caching:** pages served from Statamic's static cache never reach the app, so traffic counts run low. Probes and logins are always caught.
@@ -89,7 +91,7 @@ php please porro:connect <site key>
 
 Site Health then shows the site's open findings in Porro alongside the checks above, each linking to Porro.
 
-![Porro Site Health connected to Porro, in dark mode: an end-of-life server, an expiring certificate and domain, and a slow region, above the checks run on the site](docs/images/statamic-site-health-dark.png)
+![Porro Site Health connected to Porro, in dark mode: an end-of-life server, an expiring certificate and domain, and a slow region, above the checks run on the site](https://raw.githubusercontent.com/Porrodev/statamic-connector/main/docs/images/statamic-site-health-dark.png)
 
 Connecting also sends Porro a signed report every 15 minutes on Laravel's scheduler: versions, packages and the health facts above, never content, users or settings values. Run `php artisan porro:status --json` to see exactly what would be sent, and see the [Laravel connector](https://github.com/Porrodev/laravel-connector) for config and commands.
 
