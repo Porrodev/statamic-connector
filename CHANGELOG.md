@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.3.5 - 2026-10-29
+
+- Links to porro.dev from the README, the package listing and the control panel now carry UTM params, so Porro can tell which connector a visit came from.
 
 ## 0.3.4 - 2026-10-28
 
