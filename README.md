@@ -95,7 +95,85 @@ Site Health then shows the site's open findings in Porro alongside the checks ab
 
 Connecting also sends Porro a signed report every 15 minutes on Laravel's scheduler: versions, packages and the health facts above, never content, users or settings values. Run `php artisan porro:status --json` to see exactly what would be sent, and see the [Laravel connector](https://github.com/Porrodev/laravel-connector) for config and commands.
 
-`php please porro:connect` offers to add the scheduler's cron line; `php please porro:cron` adds it on its own.
+`php please porro:connect` offers to add the scheduler's cron line; `php please porro:cron` adds it on its own and, once the site is connected, sends a report straight away. See [Scheduling reports](#scheduling-reports) to add it on Forge, Ploi, Laravel Cloud and other hosts.
+
+## Scheduling reports
+
+Laravel's scheduler needs to run `php artisan schedule:run` from the project folder every minute. Reports, the scheduler check and activity batching all run on it.
+
+`php please porro:cron` adds the line to the server's crontab for you, or tells you it's already there. Once the site is connected it also sends a report straight away, so Porro stops saying cron is missing without waiting for the first scheduled one. If it can't reach the crontab, it prints the line to add by hand, using one of the guides below.
+
+**Zero-downtime deploys** (Forge, Envoyer, Ploi, Deployer): always point cron at the `current` folder, e.g. `/home/forge/example.com/current`, never a `releases/…` folder. A release folder runs old code after the next deploy and stops working once it's cleaned up, with no error you'd see. `php please porro:cron` uses `current` for you.
+
+<details>
+<summary>Laravel Forge</summary>
+
+Open the site and turn on **Laravel scheduler** in its Laravel settings. That's all: Forge adds the every-minute `schedule:run` job for the site, from the right folder.
+
+To add it by hand instead, go to the server's **Scheduler** and add a **New scheduled job**:
+
+- **Command:** `php /home/forge/example.com/current/artisan schedule:run`. Leave out `/current` if the site doesn't use zero-downtime deploys. On an isolated site, use the site's own user in the path.
+- **User:** `forge`, or the site's isolated user. Never `root`.
+- **Frequency:** every minute.
+
+If you add sites through Porro's one-click install on Forge, it turns on the Laravel scheduler for you when the Forge API token has the optional `server:create-schedulers` scope.
+
+</details>
+
+<details>
+<summary>Ploi</summary>
+
+Open the server's **Cronjobs** and add one:
+
+- **Command:** `php /home/ploi/example.com/artisan schedule:run`, with `/current` before `/artisan` on zero-downtime sites.
+- **User:** `ploi`, or the site's own user.
+- **Frequency:** every minute.
+
+</details>
+
+<details>
+<summary>Laravel Cloud</summary>
+
+There's no crontab. Open the environment, edit the **App** cluster and turn on **Scheduler**. Cloud then runs `schedule:run` every minute. Set `PORRO_KEY` as an environment variable rather than running `php please porro:connect` there.
+
+</details>
+
+<details>
+<summary>Laravel Vapor</summary>
+
+Vapor runs the scheduler for you unless `vapor.yml` sets `scheduler: false`. Leave it on, and set `PORRO_KEY` as an environment variable.
+
+</details>
+
+<details>
+<summary>Envoyer</summary>
+
+Envoyer deploys but doesn't run cron. Add the job on the server itself (Forge's Scheduler, or `crontab -e`), pointing at Envoyer's `current` folder: `php /home/forge/example.com/current/artisan schedule:run`.
+
+</details>
+
+<details>
+<summary>cPanel or Plesk</summary>
+
+- **cPanel:** **Advanced → Cron Jobs**. Choose **Once Per Minute** and use `cd /home/user/example.com && php artisan schedule:run > /dev/null 2>&1`.
+- **Plesk:** **Websites & Domains → Scheduled Tasks → Add Task**. Choose **Run a command**, **Cron style** `* * * * *`, and the same command.
+
+If `php` isn't found, or runs an older PHP than the site, use the full path your host lists for the site's PHP version.
+
+</details>
+
+<details>
+<summary>Any other server (crontab)</summary>
+
+Run `crontab -e` as the user that owns the site (not root) and add:
+
+```
+* * * * * cd /path/to/site && php artisan schedule:run > /dev/null 2>&1
+```
+
+Use the `current` path on zero-downtime deploys.
+
+</details>
 
 ## Requirements
 
