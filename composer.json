@@ -1,6 +1,6 @@
 {
     "name": "porro/statamic-connector",
-    "description": "Site health, suspicious activity and IP blocking for Statamic 5–6, in the control panel: security advisories, end-of-life PHP, Laravel and Statamic, updates and the scheduler, plus probes, failed logins and form floods, blocked in the app, at Cloudflare or in nginx. Free; connect Porro to add uptime, SSL, domain and server checks.",
+    "description": "Site health, suspicious activity and IP blocking for Statamic 5\u20136, in the control panel: security advisories, end-of-life PHP, Laravel and Statamic, updates and the scheduler, plus probes, failed logins and form floods, blocked in the app, at Cloudflare or in nginx. Free; connect Porro to add uptime, SSL, domain and server checks.",
     "type": "library",
     "license": "MIT",
     "homepage": "https://porro.dev/?utm_source=statamic-connector&utm_medium=packagist&utm_campaign=connectors",
@@ -42,9 +42,11 @@
     },
     "minimum-stability": "stable",
     "require-dev": {
+        "1994/coding-standard": "^1.1",
+        "larastan/larastan": "^3.0",
+        "laravel/pint": "^1.18",
         "orchestra/testbench": "^9.0|^10.0|^11.0",
-        "pestphp/pest": "^3.0|^4.0",
-        "laravel/pint": "^1.18"
+        "pestphp/pest": "^3.0|^4.0"
     },
     "autoload-dev": {
         "psr-4": {
@@ -53,7 +55,31 @@
     },
     "scripts": {
         "test": "pest",
-        "lint": "pint"
+        "lint": "pint",
+        "lint:check": "pint --test",
+        "analyse": "phpstan analyse --no-progress --memory-limit=1G",
+        "ci:quality": [
+            "@lint:check",
+            "@analyse"
+        ],
+        "ci:test": [
+            "@test"
+        ],
+        "ci": [
+            "@ci:quality",
+            "@ci:test"
+        ],
+        "ci:lowest": [
+            "@composer update --prefer-lowest --prefer-stable --no-interaction --no-progress",
+            "@ci:test",
+            "@composer update --no-interaction --no-progress"
+        ],
+        "post-install-cmd": [
+            "qa-install-hooks"
+        ],
+        "post-update-cmd": [
+            "qa-install-hooks"
+        ]
     },
     "config": {
         "sort-packages": true,
@@ -71,6 +97,12 @@
         {
             "name": "Porro",
             "homepage": "https://porro.dev"
+        }
+    ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/1994limited/coding-standard"
         }
     ]
 }
