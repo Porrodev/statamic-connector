@@ -15,6 +15,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - { php: '8.2', laravel: '10.*', testbench: '8.*', statamic: '5.*' }
+          - { php: '8.3', laravel: '10.*', testbench: '8.*', statamic: '5.*' }
           - { php: '8.2', laravel: '11.*', testbench: '9.*', statamic: '5.*' }
           - { php: '8.4', laravel: '11.*', testbench: '9.*', statamic: '5.*' }
           - { php: '8.3', laravel: '12.*', testbench: '10.*', statamic: '5.*' }
@@ -29,10 +31,14 @@ jobs:
           php-version: ${{ matrix.php }}
           extensions: sodium, pdo_sqlite, gd, exif
           coverage: none
-      # Laravel 11 is past security support, so Composer blocks it by default.
-      # The connector still supports it: those are the sites Porro flags.
-      - if: matrix.laravel == '11.*'
+      # Laravel 10 and 11 are past security support, so Composer blocks them
+      # by default. The connector still supports them: those are the sites
+      # Porro flags.
+      - if: matrix.laravel == '10.*' || matrix.laravel == '11.*'
         run: composer config audit.block-insecure false
+      # Laravel 10's testbench needs Pest 2.
+      - if: matrix.laravel == '10.*'
+        run: composer require "pestphp/pest:2.*" --dev --no-update --no-interaction
       - run: composer require "laravel/framework:${{ matrix.laravel }}" "statamic/cms:${{ matrix.statamic }}" "orchestra/testbench:${{ matrix.testbench }}" --dev --no-update --no-interaction
       - run: composer update --prefer-dist --no-interaction --no-progress
       - run: vendor/bin/pest
