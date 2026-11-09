@@ -82,6 +82,12 @@ class StatamicConnectorServiceProvider extends ServiceProvider
                 ->middleware('throttle:10,1')
                 ->withoutMiddleware([PreventRequestForgery::class, ValidateCsrfToken::class, VerifyCsrfToken::class])
                 ->name('porro.sign-in');
+
+            // Switching from an account that's already signed in. Posted by
+            // the site's own confirmation page, so CSRF is checked as usual.
+            Route::post('porro/sign-in/confirm', [SignInController::class, 'confirm'])
+                ->middleware('throttle:10,1')
+                ->name('porro.sign-in.confirm');
         });
 
         // Opens the block and safelist confirmation dialog. Vue drops script

@@ -105,7 +105,7 @@ Once the site is connected, Porro members can open the site's control panel from
 2. The site checks the ticket with Porro, server to server, signed with its own site key, and Porro answers with the member's email.
 3. The site signs in the Statamic user with that email (in any case) and opens the dashboard.
 
-It only signs in users who already exist here and can use the control panel (the **Access the control panel** permission, or super admins). It never creates accounts or changes roles: a member without an account gets a page saying so. A used or expired link, sign-in turned off, or Porro being unreachable each get a plain page explaining what to do. The route takes 10 tries a minute from one IP.
+It only signs in users who already exist here and can use the control panel (the **Access the control panel** permission, or super admins). It never creates accounts or changes roles: a member without an account gets a page saying so. If two accounts share the email in different cases, it signs in neither. If someone else is already signed in on that browser, it asks before switching accounts. A used or expired link, sign-in turned off, or Porro being unreachable each get a plain page explaining what to do. The route takes 10 tries a minute from one IP.
 
 To turn it off on this site, whatever Porro says:
 

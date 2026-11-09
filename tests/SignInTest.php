@@ -263,3 +263,111 @@ it('isn’t turned away for a missing CSRF token outside tests', function () {
 
     $this->post(signInUrl(), ['ticket' => TICKET])->assertStatus(410);
 });
+
+it('signs no one in when two accounts share the email in different cases', function () {
+    porroAnswers(200, ['ok' => true, 'email' => 'daniel@1994.co.uk', 'name' => 'Daniel Jones']);
+    editorWithCp('Daniel@1994.co.uk');
+    tap(User::make()->email('daniel@1994.co.UK')->makeSuper())->save();
+
+    $this->post(signInUrl(), ['ticket' => TICKET])
+        ->assertForbidden()
+        ->assertSee('More than one account on this site uses this email, so Porro can’t tell which to sign in. Ask a site admin to fix it.', false);
+
+    expect(Auth::check())->toBeFalse();
+});
+
+function switchToken(string $html): string
+{
+    preg_match('/name="token" value="([^"]+)"/', $html, $m);
+
+    return html_entity_decode($m[1] ?? '');
+}
+
+it('goes straight to the control panel when the member is already signed in as that user', function () {
+    porroAnswers(200, ['ok' => true, 'email' => 'daniel@1994.co.uk', 'name' => 'Daniel Jones']);
+    $user = editorWithCp();
+
+    $this->actingAs($user)->post(signInUrl(), ['ticket' => TICKET])->assertRedirect(cp_route('index'));
+
+    expect(Auth::id())->toBe($user->id());
+});
+
+it('asks before switching away from someone else who’s signed in', function () {
+    porroAnswers(200, ['ok' => true, 'email' => 'daniel@1994.co.uk', 'name' => 'Daniel Jones']);
+    $member = editorWithCp();
+    $other = tap(User::make()->email('client@example.com')->makeSuper())->save();
+
+    $page = $this->actingAs($other)->post(signInUrl(), ['ticket' => TICKET])
+        ->assertOk()
+        ->assertSee('You’re signed in as client@example.com. Switch to daniel@1994.co.uk?', false)
+        ->assertSee(route('statamic.porro.sign-in.confirm'))
+        ->assertDontSee(TICKET)
+        ->assertHeader('Cache-Control', 'no-store, private');
+
+    // The ticket is spent, but no one has been swapped yet.
+    Http::assertSentCount(1);
+    expect(Auth::id())->toBe($other->id());
+
+    $token = switchToken($page->getContent());
+    expect($token)->not->toBe('');
+
+    $this->post(route('statamic.porro.sign-in.confirm'), ['token' => $token])->assertRedirect(cp_route('index'));
+    expect(Auth::id())->toBe($member->id());
+});
+
+it('takes a switch token once', function () {
+    porroAnswers(200, ['ok' => true, 'email' => 'daniel@1994.co.uk', 'name' => 'Daniel Jones']);
+    editorWithCp();
+    $other = tap(User::make()->email('client@example.com')->makeSuper())->save();
+
+    $token = switchToken($this->actingAs($other)->post(signInUrl(), ['ticket' => TICKET])->getContent());
+    $this->post(route('statamic.porro.sign-in.confirm'), ['token' => $token])->assertRedirect(cp_route('index'));
+
+    $this->actingAs($other)->post(route('statamic.porro.sign-in.confirm'), ['token' => $token])->assertStatus(410);
+    expect(Auth::id())->toBe($other->id());
+});
+
+it('refuses a switch token that’s old, altered or for someone else’s session', function (string $case) {
+    porroAnswers(200, ['ok' => true, 'email' => 'daniel@1994.co.uk', 'name' => 'Daniel Jones']);
+    editorWithCp();
+    $other = tap(User::make()->email('client@example.com')->makeSuper())->save();
+    $third = tap(User::make()->email('third@example.com')->makeSuper())->save();
+
+    $token = switchToken($this->actingAs($other)->post(signInUrl(), ['ticket' => TICKET])->getContent());
+    $as = $other;
+
+    match ($case) {
+        'old' => $this->travel(6)->minutes(),
+        'altered' => $token = substr($token, 0, -4).'AAAA',
+        'another session' => $as = $third,
+    };
+
+    $this->actingAs($as)->post(route('statamic.porro.sign-in.confirm'), ['token' => $token])
+        ->assertStatus(410)
+        ->assertSee('This switch has expired');
+
+    expect(Auth::id())->toBe($as->id());
+})->with(['old', 'altered', 'another session']);
+
+it('refuses a switch with no one signed in', function () {
+    porroAnswers(200, ['ok' => true, 'email' => 'daniel@1994.co.uk', 'name' => 'Daniel Jones']);
+    editorWithCp();
+    $other = tap(User::make()->email('client@example.com')->makeSuper())->save();
+
+    $token = switchToken($this->actingAs($other)->post(signInUrl(), ['ticket' => TICKET])->getContent());
+    Auth::logout();
+
+    $this->post(route('statamic.porro.sign-in.confirm'), ['token' => $token])->assertStatus(410);
+    expect(Auth::check())->toBeFalse();
+});
+
+it('checks CSRF on the switch, as it’s posted from the site itself', function () {
+    $route = Route::getRoutes()->getByName('statamic.porro.sign-in.confirm');
+    $middleware = app('router')->gatherRouteMiddleware($route);
+
+    expect($route->methods())->toBe(['POST'])
+        ->and(collect([ValidateCsrfToken::class, VerifyCsrfToken::class, PreventRequestForgery::class])->intersect($middleware))->not->toBeEmpty();
+
+    $this->app['env'] = 'production';
+    $this->post(route('statamic.porro.sign-in.confirm'), ['token' => 'x'])->assertStatus(419);
+});

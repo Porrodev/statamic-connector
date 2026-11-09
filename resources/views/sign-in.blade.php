@@ -10,6 +10,18 @@
             'title' => __('No control panel account for you here'),
             'body' => __('This site has no Statamic user with the email :email. Ask whoever manages the site to add you, then choose Sign in again in Porro.', ['email' => $email]),
         ],
+        'ambiguous' => [
+            'title' => __('More than one account uses this email'),
+            'body' => __('More than one account on this site uses this email, so Porro can’t tell which to sign in. Ask a site admin to fix it.'),
+        ],
+        'switch' => [
+            'title' => __('Switch accounts?'),
+            'body' => __('You’re signed in as :current. Switch to :email?', ['current' => $current ?? '', 'email' => $email]),
+        ],
+        'switch_expired' => [
+            'title' => __('This switch has expired'),
+            'body' => __('Switching accounts has to be confirmed once, within five minutes, by whoever was signed in. Go back to the site in Porro and choose Sign in again.'),
+        ],
         'no_cp_access' => [
             'title' => __('Your account can’t use the control panel'),
             'body' => __('The Statamic user :email doesn’t have the “Access the control panel” permission on this site. Ask whoever manages the site to give your role that permission.', ['email' => $email]),
@@ -55,14 +67,22 @@
         h1 { margin: 0 0 10px; font-size: 20px; line-height: 1.3; }
         p { margin: 0; color: var(--muted); overflow-wrap: anywhere; }
         a { color: var(--link); }
-        .actions { margin-top: 20px; font-size: 15px; }
+        .actions { margin-top: 20px; font-size: 15px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+        button { font: inherit; padding: 8px 16px; border-radius: 8px; border: 0; background: var(--link); color: var(--card); cursor: pointer; }
     </style>
 </head>
 <body>
     <main>
         <h1>{{ $message['title'] }}</h1>
         <p>{{ $message['body'] }}</p>
-        @if ($login)
+        @if ($reason === 'switch')
+            <form method="POST" action="{{ route('statamic.porro.sign-in.confirm') }}" class="actions">
+                @csrf
+                <input type="hidden" name="token" value="{{ $token }}">
+                <button type="submit">{{ __('Switch to :email', ['email' => $email]) }}</button>
+                <a href="{{ cp_route('index') }}">{{ __('Stay as :current', ['current' => $current]) }}</a>
+            </form>
+        @elseif ($login)
             <p class="actions"><a href="{{ $login }}">{{ __('Sign in with a password') }}</a></p>
         @endif
     </main>
