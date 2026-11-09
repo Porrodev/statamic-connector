@@ -2,11 +2,15 @@
 
 namespace Porro\Statamic;
 
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Porro\Laravel\Activity\Confirm;
 use Porro\Statamic\Http\BlockingController;
 use Porro\Statamic\Http\IpController;
+use Porro\Statamic\Http\SignInController;
 use Porro\Statamic\Http\SiteHealthController;
 use Statamic\Facades\CP\Nav;
 use Statamic\Facades\Permission;
@@ -16,6 +20,8 @@ class StatamicConnectorServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->mergeConfigFrom(__DIR__.'/../config/porro.php', 'porro');
+
         $this->app->tag([StatamicCollector::class], 'porro.collectors');
         $this->app->tag([StatamicHealth::class], 'porro.health');
     }
@@ -62,6 +68,26 @@ class StatamicConnectorServiceProvider extends ServiceProvider
 
             // It used to be a utility: keep old bookmarks working.
             Route::get('utilities/porro', fn () => redirect(cp_route('porro.index')));
+        });
+
+        // Sign in from Porro, at /!/porro/sign-in with Statamic's default
+        // action prefix. Porro's page posts the ticket from another origin,
+        // so there's no CSRF token to check; the ticket, redeemed with the
+        // site's own key, is what proves the request. Throttled per IP.
+        // Laravel 13's web group checks with PreventRequestForgery, 11 and
+        // 12's with ValidateCsrfToken; naming a class that isn't there is
+        // harmless.
+        Statamic::pushActionRoutes(function () {
+            Route::post('porro/sign-in', SignInController::class)
+                ->middleware('throttle:10,1')
+                ->withoutMiddleware([PreventRequestForgery::class, ValidateCsrfToken::class, VerifyCsrfToken::class])
+                ->name('porro.sign-in');
+
+            // Switching from an account that's already signed in. Posted by
+            // the site's own confirmation page, so CSRF is checked as usual.
+            Route::post('porro/sign-in/confirm', [SignInController::class, 'confirm'])
+                ->middleware('throttle:10,1')
+                ->name('porro.sign-in.confirm');
         });
 
         // Opens the block and safelist confirmation dialog. Vue drops script
