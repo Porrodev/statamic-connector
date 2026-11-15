@@ -46,7 +46,7 @@ function porroAnswers(int $status, array $body): void
     Http::fake(['porro.test/api/v1/sign-in/redeem' => Http::response($body, $status)]);
 }
 
-function editorWithCp(string $email = 'daniel@1994.co.uk')
+function editorWithCp(string $email = 'sam@example.com')
 {
     $user = tap(User::make()->email($email))->save();
     $role = tap(Role::make('editor')->addPermission('access cp'))->save();
@@ -112,7 +112,7 @@ it('only starts for a ticket posted from Porro’s own page', function (array $h
 ]);
 
 it('only signs in from this site’s own page', function (array $headers, bool $allowed) {
-    porroAnswers(200, ['ok' => true, 'email' => 'daniel@1994.co.uk', 'name' => 'Daniel Jones']);
+    porroAnswers(200, ['ok' => true, 'email' => 'sam@example.com', 'name' => 'Sam Patel']);
     editorWithCp();
 
     $response = $this->flushHeaders()->post(signInUrl(), ['ticket' => TICKET], $headers);
@@ -164,7 +164,7 @@ it('is off on a copy of the site that isn’t live, unless the copy turns it on'
 });
 
 it('signs the member in to the control panel and sends them to the dashboard', function () {
-    porroAnswers(200, ['ok' => true, 'email' => 'daniel@1994.co.uk', 'name' => 'Daniel Jones']);
+    porroAnswers(200, ['ok' => true, 'email' => 'sam@example.com', 'name' => 'Sam Patel']);
     $user = editorWithCp();
 
     $this->post(signInUrl(), ['ticket' => TICKET])->assertRedirect(cp_route('index'));
@@ -173,23 +173,23 @@ it('signs the member in to the control panel and sends them to the dashboard', f
 });
 
 it('matches the email whatever its case', function (string $fromPorro, string $here) {
-    porroAnswers(200, ['ok' => true, 'email' => $fromPorro, 'name' => 'Daniel Jones']);
+    porroAnswers(200, ['ok' => true, 'email' => $fromPorro, 'name' => 'Sam Patel']);
     $user = editorWithCp($here);
-    tap(User::make()->email('daniel@1994xco.uk'))->save();
+    tap(User::make()->email('sam@examplexcom'))->save();
 
     $this->post(signInUrl(), ['ticket' => TICKET])->assertRedirect(cp_route('index'));
 
     expect(Auth::id())->toBe($user->id());
 })->with([
-    'capitals in Porro' => ['Daniel@1994.co.UK', 'daniel@1994.co.uk'],
-    'capitals here' => ['daniel@1994.co.uk', 'Daniel@1994.co.UK'],
-    'capitals in both' => ['daniel@1994.CO.uk', 'Daniel@1994.co.UK'],
-    'an underscore' => ['Daniel_Jones@1994.co.uk', 'daniel_jones@1994.co.uk'],
+    'capitals in Porro' => ['Sam@example.COM', 'sam@example.com'],
+    'capitals here' => ['sam@example.com', 'Sam@example.COM'],
+    'capitals in both' => ['sam@EXAMPLE.com', 'Sam@example.COM'],
+    'an underscore' => ['Sam_Patel@example.com', 'sam_patel@example.com'],
 ]);
 
 it('lets super admins in without a role', function () {
-    porroAnswers(200, ['ok' => true, 'email' => 'daniel@1994.co.uk', 'name' => 'Daniel Jones']);
-    $user = tap(User::make()->email('daniel@1994.co.uk')->makeSuper())->save();
+    porroAnswers(200, ['ok' => true, 'email' => 'sam@example.com', 'name' => 'Sam Patel']);
+    $user = tap(User::make()->email('sam@example.com')->makeSuper())->save();
 
     $this->post(signInUrl(), ['ticket' => TICKET])->assertRedirect(cp_route('index'));
 
@@ -197,7 +197,7 @@ it('lets super admins in without a role', function () {
 });
 
 it('redeems the ticket with a request signed by the site key', function () {
-    porroAnswers(200, ['ok' => true, 'email' => 'daniel@1994.co.uk', 'name' => 'Daniel Jones']);
+    porroAnswers(200, ['ok' => true, 'email' => 'sam@example.com', 'name' => 'Sam Patel']);
     editorWithCp();
 
     $this->post(signInUrl(), ['ticket' => TICKET]);
@@ -262,8 +262,8 @@ it('says so when there’s no Statamic user with the member’s email', function
 });
 
 it('won’t sign in a user who can’t use the control panel', function () {
-    porroAnswers(200, ['ok' => true, 'email' => 'daniel@1994.co.uk', 'name' => 'Daniel Jones']);
-    $user = tap(User::make()->email('daniel@1994.co.uk'))->save();
+    porroAnswers(200, ['ok' => true, 'email' => 'sam@example.com', 'name' => 'Sam Patel']);
+    $user = tap(User::make()->email('sam@example.com'))->save();
 
     $this->post(signInUrl(), ['ticket' => TICKET])
         ->assertForbidden()
@@ -321,7 +321,7 @@ it('treats a Porro error or an odd answer as Porro being unreachable', function 
 })->with([
     'server error' => [500, ['message' => 'Server Error']],
     'ok without an email' => [200, ['ok' => true]],
-    'not ok' => [200, ['ok' => false, 'email' => 'daniel@1994.co.uk']],
+    'not ok' => [200, ['ok' => false, 'email' => 'sam@example.com']],
 ]);
 
 it('says the site key was refused when Porro rejects the signature', function () {
@@ -375,9 +375,9 @@ it('isn’t turned away for a missing CSRF token outside tests', function () {
 });
 
 it('signs no one in when two accounts share the email in different cases', function () {
-    porroAnswers(200, ['ok' => true, 'email' => 'daniel@1994.co.uk', 'name' => 'Daniel Jones']);
-    editorWithCp('Daniel@1994.co.uk');
-    tap(User::make()->email('daniel@1994.co.UK')->makeSuper())->save();
+    porroAnswers(200, ['ok' => true, 'email' => 'sam@example.com', 'name' => 'Sam Patel']);
+    editorWithCp('Sam@example.com');
+    tap(User::make()->email('sam@example.COM')->makeSuper())->save();
 
     $this->post(signInUrl(), ['ticket' => TICKET])
         ->assertForbidden()
@@ -394,7 +394,7 @@ function switchToken(string $html): string
 }
 
 it('goes straight to the control panel when the member is already signed in as that user', function () {
-    porroAnswers(200, ['ok' => true, 'email' => 'daniel@1994.co.uk', 'name' => 'Daniel Jones']);
+    porroAnswers(200, ['ok' => true, 'email' => 'sam@example.com', 'name' => 'Sam Patel']);
     $user = editorWithCp();
 
     $this->actingAs($user)->post(signInUrl(), ['ticket' => TICKET])->assertRedirect(cp_route('index'));
@@ -403,13 +403,13 @@ it('goes straight to the control panel when the member is already signed in as t
 });
 
 it('asks before switching away from someone else who’s signed in', function () {
-    porroAnswers(200, ['ok' => true, 'email' => 'daniel@1994.co.uk', 'name' => 'Daniel Jones']);
+    porroAnswers(200, ['ok' => true, 'email' => 'sam@example.com', 'name' => 'Sam Patel']);
     $member = editorWithCp();
     $other = tap(User::make()->email('client@example.com')->makeSuper())->save();
 
     $page = $this->actingAs($other)->post(signInUrl(), ['ticket' => TICKET])
         ->assertOk()
-        ->assertSee('You’re signed in as client@example.com. Switch to daniel@1994.co.uk?', false)
+        ->assertSee('You’re signed in as client@example.com. Switch to sam@example.com?', false)
         ->assertSee(route('statamic.porro.sign-in.confirm'))
         ->assertDontSee(TICKET)
         ->assertHeader('Cache-Control', 'no-store, private')
@@ -429,7 +429,7 @@ it('asks before switching away from someone else who’s signed in', function ()
 });
 
 it('takes a switch token once', function () {
-    porroAnswers(200, ['ok' => true, 'email' => 'daniel@1994.co.uk', 'name' => 'Daniel Jones']);
+    porroAnswers(200, ['ok' => true, 'email' => 'sam@example.com', 'name' => 'Sam Patel']);
     editorWithCp();
     $other = tap(User::make()->email('client@example.com')->makeSuper())->save();
 
@@ -441,7 +441,7 @@ it('takes a switch token once', function () {
 });
 
 it('refuses a switch token that’s old, altered or for someone else’s session', function (string $case) {
-    porroAnswers(200, ['ok' => true, 'email' => 'daniel@1994.co.uk', 'name' => 'Daniel Jones']);
+    porroAnswers(200, ['ok' => true, 'email' => 'sam@example.com', 'name' => 'Sam Patel']);
     editorWithCp();
     $other = tap(User::make()->email('client@example.com')->makeSuper())->save();
     $third = tap(User::make()->email('third@example.com')->makeSuper())->save();
@@ -463,7 +463,7 @@ it('refuses a switch token that’s old, altered or for someone else’s session
 })->with(['old', 'altered', 'another session']);
 
 it('refuses a switch with no one signed in', function () {
-    porroAnswers(200, ['ok' => true, 'email' => 'daniel@1994.co.uk', 'name' => 'Daniel Jones']);
+    porroAnswers(200, ['ok' => true, 'email' => 'sam@example.com', 'name' => 'Sam Patel']);
     editorWithCp();
     $other = tap(User::make()->email('client@example.com')->makeSuper())->save();
 
