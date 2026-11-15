@@ -2,7 +2,7 @@
 
 use Porro\Statamic\Tests\TestCase;
 
-pest()->extend(TestCase::class)->in(__DIR__);
+uses(TestCase::class)->in(__DIR__);
 
 /**
  * A valid site key, as Porro would issue it.
