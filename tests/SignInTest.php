@@ -365,8 +365,12 @@ it('checks CSRF on the switch, as it’s posted from the site itself', function 
     $route = Route::getRoutes()->getByName('statamic.porro.sign-in.confirm');
     $middleware = app('router')->gatherRouteMiddleware($route);
 
+    // Laravel 10's web group checks with a subclass of VerifyCsrfToken.
+    $checksCsrf = collect($middleware)->contains(fn ($class) => is_string($class) && collect([ValidateCsrfToken::class, VerifyCsrfToken::class, PreventRequestForgery::class])
+        ->contains(fn (string $csrf) => is_a($class, $csrf, true)));
+
     expect($route->methods())->toBe(['POST'])
-        ->and(collect([ValidateCsrfToken::class, VerifyCsrfToken::class, PreventRequestForgery::class])->intersect($middleware))->not->toBeEmpty();
+        ->and($checksCsrf)->toBeTrue();
 
     $this->app['env'] = 'production';
     $this->post(route('statamic.porro.sign-in.confirm'), ['token' => 'x'])->assertStatus(419);
