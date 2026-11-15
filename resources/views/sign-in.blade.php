@@ -40,7 +40,7 @@
         ],
         'continue' => [
             'title' => __('Signing you in…'),
-            'body' => __('If nothing happens, choose Continue.'),
+            'body' => __('Taking you to the control panel on :host. If nothing happens, choose Continue.', ['host' => request()->getHost()]),
         ],
         'not_connected' => [
             'title' => __('This site isn’t connected to Porro'),
@@ -67,20 +67,36 @@
     <meta name="robots" content="noindex">
     <title>{{ $message['title'] }}</title>
     <style>
-        :root { color-scheme: light dark; --bg: #f6f6f4; --card: #fff; --text: #1c1c1a; --muted: #5d5d58; --line: #e2e2dd; --link: #1f5fbf; }
-        @media (prefers-color-scheme: dark) { :root { --bg: #141413; --card: #1e1e1c; --text: #ededea; --muted: #a8a8a2; --line: #33332f; --link: #8ab4f8; } }
+        /* Porro's own greys, so the page reads as Porro's without loading
+           anything: the member has just come from Porro, and this page is
+           on the client's site. Lime only in the dark, on the one button
+           and the progress bar. */
+        :root { color-scheme: light dark; --bg: #f6f6f4; --card: #fff; --text: #050505; --muted: #6b6e72; --faint: #9a9d9f; --line: #e3e3de; --primary: #0a0a0a; --on-primary: #fff; --track: #ececea; --point: #050505; }
+        @media (prefers-color-scheme: dark) { :root { --bg: #050505; --card: #0a0a0a; --text: #f2f2f0; --muted: #9a9d9f; --faint: #80848a; --line: #1f2123; --primary: #c9f26a; --on-primary: #050505; --track: #1f2123; --point: #c9f26a; } }
         * { box-sizing: border-box; }
-        body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; background: var(--bg); color: var(--text); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
-        main { width: 100%; max-width: 440px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 28px; }
-        h1 { margin: 0 0 10px; font-size: 20px; line-height: 1.3; }
+        body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; background: var(--bg); color: var(--text); font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+        main { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 28px; }
+        h1 { margin: 0; font-size: 20px; line-height: 1.25; font-weight: 600; letter-spacing: -0.01em; }
         p { margin: 0; color: var(--muted); overflow-wrap: anywhere; }
-        a { color: var(--link); }
-        .actions { margin-top: 20px; font-size: 15px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
-        button { font: inherit; padding: 8px 16px; border-radius: 8px; border: 0; background: var(--link); color: var(--card); cursor: pointer; }
+        a { color: var(--text); text-underline-offset: 2px; }
+        .from, .site { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--faint); }
+        .from { display: flex; align-items: center; gap: 8px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+        .from svg { width: 16px; height: 16px; flex: none; color: var(--text); }
+        .from circle { fill: var(--point); }
+        .site { font-size: 12px; }
+        .progress { height: 3px; border-radius: 2px; background: var(--track); overflow: hidden; }
+        .progress span { display: block; width: 60%; height: 100%; border-radius: 2px; background: var(--primary); }
+        .actions { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: center; }
+        button { font: inherit; font-size: 14px; font-weight: 500; padding: 9px 14px; border-radius: 6px; border: 1px solid var(--primary); background: var(--primary); color: var(--on-primary); cursor: pointer; }
+        button.quiet { border-color: var(--line); background: none; color: var(--text); }
     </style>
 </head>
 <body>
     <main>
+        <p class="from">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 1.5 18.5 10 10 18.5 1.5 10Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5"/></svg>
+            {{ __('Sign in from Porro') }}
+        </p>
         <h1>{{ $message['title'] }}</h1>
         <p>{{ $message['body'] }}</p>
         @if ($reason === 'switch')
@@ -91,16 +107,18 @@
                 <a href="{{ cp_route('index') }}">{{ __('Stay as :current', ['current' => $current]) }}</a>
             </form>
         @elseif ($reason === 'continue')
+            <div class="progress"><span></span></div>
             {{-- Posted on from this site's own page, so the browser sends
                  the session cookie it held back from Porro's. --}}
             <form method="POST" action="{{ route('statamic.porro.sign-in.continue') }}" class="actions" id="porro-continue">
                 <input type="hidden" name="ticket" value="{{ $ticket }}">
-                <button type="submit">{{ __('Continue') }}</button>
+                <button type="submit" class="quiet">{{ __('Continue') }}</button>
             </form>
             <script>document.getElementById('porro-continue').submit();</script>
         @elseif ($login)
             <p class="actions"><a href="{{ $login }}">{{ __('Sign in with a password') }}</a></p>
         @endif
+        <p class="site">{{ request()->getHost() }} · {{ __('Porro connector') }}</p>
     </main>
 </body>
 </html>
