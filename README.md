@@ -97,6 +97,24 @@ Connecting also sends Porro a signed report every 15 minutes on Laravel's schedu
 
 `php please porro:connect` offers to add the scheduler's cron line; `php please porro:cron` adds it on its own and, once the site is connected, sends a report straight away. See [Scheduling reports](#scheduling-reports) to add it on Forge, Ploi, Laravel Cloud and other hosts.
 
+## Sign in from Porro
+
+Once the site is connected, Porro members can open the site's control panel from its page in Porro with **Sign in to Statamic**, without a password. It needs **Sign in to client sites** turned on for the workspace in Porro.
+
+1. Porro sends the member's browser to `POST /!/porro/sign-in` with a one-time ticket that lasts 60 seconds.
+2. That first step starts no session and signs no one in. Its page posts the ticket on to `/!/porro/sign-in/continue` from the site itself, so the browser sends the session cookie it holds back from another site's post, and the site can see who's already signed in.
+3. The site checks the ticket with Porro, server to server, signed with its own site key, and Porro answers with the member's email.
+4. The site signs in the Statamic user with that email (in any case) and opens the dashboard.
+
+It only signs in users who already exist here and can use the control panel (the **Access the control panel** permission, or super admins). It never creates accounts or changes roles: a member without an account gets a page saying so. If two accounts share the email in different cases, it signs in neither. If someone else is already signed in on that browser, it asks before switching accounts. A used or expired link, sign-in turned off, or Porro being unreachable each get a plain page explaining what to do. Each step takes 10 tries a minute from one IP, the ticket is only read from the form, never the address, and none of its pages can be shown in another site's frame.
+
+It's on for the live site (`APP_ENV=production`) and off on staging and local copies, which often carry the live site's key. To turn it on for a copy, or off on the live site whatever Porro says:
+
+```env
+PORRO_SIGN_IN=true
+PORRO_SIGN_IN=false
+```
+
 ## Scheduling reports
 
 Laravel's scheduler needs to run `php artisan schedule:run` from the project folder every minute. Reports, the scheduler check and activity batching all run on it.
@@ -187,7 +205,7 @@ Use the `current` path on zero-downtime deploys.
 | `packagist.org` | Advisory check, at most every 6 hours or when `composer.lock` changes | Package names from `composer.lock` |
 | `repo.packagist.org` | Laravel update check, at most twice a day | Nothing beyond the request |
 | `endoflife.date` | Support dates, at most once a day | Nothing beyond the request |
-| `app.porro.dev` | Only once connected: reports every 15 minutes, findings when Site Health is open (cached 5 minutes) | Signed with the site key |
+| `app.porro.dev` | Only once connected: reports every 15 minutes, findings when Site Health is open (cached 5 minutes), and a sign-in ticket when someone signs in from Porro | Signed with the site key |
 | `www.cloudflare.com`, `forge.laravel.com` | Their published IP ranges, once a day | Nothing beyond the request |
 | `developers.google.com`, `www.bing.com` | Google's and Bing's published crawler ranges, once a day | Nothing beyond the request |
 | `check.torproject.org`, `www.spamhaus.org` | The Tor exit and Spamhaus DROP lists, when an IP's details page opens (cached an hour and a day) | Nothing beyond the request |
