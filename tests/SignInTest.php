@@ -80,6 +80,9 @@ it('starts without a session, and hands the ticket on from this site’s own pag
         ->assertSee('action="'.route('statamic.porro.sign-in.continue').'"', false)
         ->assertSee('name="ticket" value="'.TICKET.'"', false)
         ->assertHeader('Cache-Control', 'no-store, private')
+        // So the post this page makes names its origin, for browsers
+        // that don't send Sec-Fetch-Site.
+        ->assertHeader('Referrer-Policy', 'same-origin')
         ->assertHeader('X-Frame-Options', 'DENY')
         ->assertHeader('Content-Security-Policy', "frame-ancestors 'none'");
 

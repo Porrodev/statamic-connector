@@ -306,7 +306,10 @@ class SignInController extends Controller
             ->view('porro::sign-in', ['reason' => $reason, 'email' => $email] + $data, $status)
             // A sign-in answer is for this visitor once, never for a cache.
             ->header('Cache-Control', 'no-store, private')
-            ->header('Referrer-Policy', 'no-referrer')
+            // "no-referrer" would also blank the Origin of the post the
+            // "continue" page makes to this site, which browsers without
+            // Sec-Fetch-Site are told apart by.
+            ->header('Referrer-Policy', $reason === 'continue' ? 'same-origin' : 'no-referrer')
             // And never inside another site's frame, where "Switch" could
             // be dressed up as something else.
             ->header('Content-Security-Policy', "frame-ancestors 'none'")
