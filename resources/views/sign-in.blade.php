@@ -34,6 +34,14 @@
             'title' => __('Sign-in from Porro is turned off'),
             'body' => __('This site has turned off signing in from Porro (PORRO_SIGN_IN=false). Sign in with your password instead.'),
         ],
+        'not_live' => [
+            'title' => __('Sign-in from Porro is off on this copy of the site'),
+            'body' => __('Signing in from Porro works on the live site only, unless a copy turns it on (PORRO_SIGN_IN=true). Sign in with your password instead.'),
+        ],
+        'continue' => [
+            'title' => __('Signing you in…'),
+            'body' => __('If nothing happens, choose Continue.'),
+        ],
         'not_connected' => [
             'title' => __('This site isn’t connected to Porro'),
             'body' => __('The site has no Porro site key, so it can’t check the link with Porro. Sign in with your password instead.'),
@@ -82,6 +90,14 @@
                 <button type="submit">{{ __('Switch to :email', ['email' => $email]) }}</button>
                 <a href="{{ cp_route('index') }}">{{ __('Stay as :current', ['current' => $current]) }}</a>
             </form>
+        @elseif ($reason === 'continue')
+            {{-- Posted on from this site's own page, so the browser sends
+                 the session cookie it held back from Porro's. --}}
+            <form method="POST" action="{{ route('statamic.porro.sign-in.continue') }}" class="actions" id="porro-continue">
+                <input type="hidden" name="ticket" value="{{ $ticket }}">
+                <button type="submit">{{ __('Continue') }}</button>
+            </form>
+            <script>document.getElementById('porro-continue').submit();</script>
         @elseif ($login)
             <p class="actions"><a href="{{ $login }}">{{ __('Sign in with a password') }}</a></p>
         @endif

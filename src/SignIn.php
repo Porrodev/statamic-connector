@@ -27,11 +27,33 @@ class SignIn
     public const UNREACHABLE = 'unreachable';
 
     /**
-     * Whether the site owner allows it. On unless PORRO_SIGN_IN says no.
+     * Whether the site owner allows it. PORRO_SIGN_IN decides when it's
+     * set. Unset, it's on for the live site only: a staging or local copy
+     * that carries the live site's key would otherwise take the live
+     * site's tickets.
      */
     public static function enabled(): bool
     {
-        return filter_var(config('porro.sign_in', true), FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) ?? true;
+        return self::setting() ?? app()->isProduction();
+    }
+
+    /**
+     * Which "it's off here" page to show: turned off by hand, or a copy
+     * of the site that isn't live.
+     */
+    public static function offReason(): string
+    {
+        return self::setting() === false ? 'turned_off_here' : 'not_live';
+    }
+
+    /**
+     * PORRO_SIGN_IN as yes or no, or null when it's unset or says neither.
+     */
+    private static function setting(): ?bool
+    {
+        $value = config('porro.sign_in');
+
+        return $value === null || $value === '' ? null : filter_var($value, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
     }
 
     /**

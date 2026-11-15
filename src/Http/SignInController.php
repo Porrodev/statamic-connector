@@ -21,8 +21,9 @@ use Statamic\Facades\User;
 
 /**
  * "Sign in to Statamic" from the site page in Porro. Porro's page posts a
- * one-time ticket here; the site checks it with Porro using its own key and
- * signs in the Statamic user with the member's email. No password changes
+ * one-time ticket here, this site's own page posts it on, and then the
+ * site checks it with Porro using its own key and signs in the Statamic
+ * user with the member's email. No password changes
  * hands, no account is ever made and no role is ever changed: a member
  * without a control panel account here gets a page saying so. When someone
  * else is already signed in, it asks before switching.
@@ -34,11 +35,43 @@ class SignInController extends Controller
 
     private const SWITCH_TTL = 300;
 
+    /**
+     * Where Porro's page posts the ticket, from another site. Browsers hold
+     * the session cookie back from a post like that, so nobody would look
+     * signed in here, and starting a session would replace the one they
+     * have. So this step has no session and signs no one in: it answers
+     * with a page that posts the ticket on, from this site, to the step
+     * that can see who's signed in.
+     */
+    public function start(Request $request): Response
+    {
+        if (! SignIn::enabled()) {
+            return $this->page(SignIn::offReason(), 403);
+        }
+
+        $ticket = $this->ticket($request);
+
+        // Only from Porro's own page. Any other site could post a ticket
+        // of its own here and have this page sign a visitor in to its
+        // account.
+        if ($ticket === null || ! $this->sameOrigin((string) $request->headers->get('Origin'), (string) config('porro.url'))) {
+            return $this->page('expired', 410);
+        }
+
+        return $this->page('continue', 200, null, ['ticket' => $ticket]);
+    }
+
     public function __invoke(Request $request, SignIn $signIn): Response|RedirectResponse
     {
         // The site owner's switch comes first, and Porro is never asked.
         if (! SignIn::enabled()) {
-            return $this->page('turned_off_here', 403);
+            return $this->page(SignIn::offReason(), 403);
+        }
+
+        // Only from the page above. Posted from anywhere else, the session
+        // cookie may be missing, and the check on who's signed in with it.
+        if (! $this->fromThisSite($request)) {
+            return $this->page('expired', 410);
         }
 
         try {
@@ -47,11 +80,9 @@ class SignInController extends Controller
             return $this->page('not_connected', 403);
         }
 
-        // Only the shape Porro makes. Anything else can't be a live ticket,
-        // so it isn't worth a request to Porro.
-        $ticket = $request->input('ticket');
+        $ticket = $this->ticket($request);
 
-        if (! is_string($ticket) || ! preg_match('/^[A-Za-z0-9_.~:-]{16,512}$/', $ticket)) {
+        if ($ticket === null) {
             return $this->page('expired', 410);
         }
 
@@ -64,6 +95,57 @@ class SignInController extends Controller
             SignIn::KEY_REFUSED => $this->page('key_refused', 502),
             default => $this->page('unreachable', 502),
         };
+    }
+
+    /**
+     * The ticket from the form body, never the address: a ticket in a URL
+     * ends up in logs and history. Only the shape Porro makes; anything
+     * else can't be a live ticket, so it isn't worth a request to Porro.
+     */
+    private function ticket(Request $request): ?string
+    {
+        $ticket = $request->request->all()['ticket'] ?? null;
+
+        if ($request->query->has('ticket') || ! is_string($ticket) || ! preg_match('/^[A-Za-z0-9_.~:-]{16,512}$/', $ticket)) {
+            return null;
+        }
+
+        return $ticket;
+    }
+
+    /**
+     * Whether this site's own page made the request. Browsers say so in
+     * Sec-Fetch-Site; older ones name the page's origin, which must be
+     * this site's, scheme and port included.
+     */
+    private function fromThisSite(Request $request): bool
+    {
+        $site = $request->headers->get('Sec-Fetch-Site');
+
+        if ($site !== null) {
+            return $site === 'same-origin';
+        }
+
+        return $this->sameOrigin((string) $request->headers->get('Origin'), $request->getSchemeAndHttpHost());
+    }
+
+    /**
+     * Whether two addresses share a scheme, host and port.
+     */
+    private function sameOrigin(string $one, string $other): bool
+    {
+        $origin = function (string $url): ?string {
+            $parts = parse_url($url);
+            $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+
+            if (! in_array($scheme, ['http', 'https'], true) || ! isset($parts['host'])) {
+                return null;
+            }
+
+            return $scheme.'://'.strtolower($parts['host']).':'.($parts['port'] ?? ($scheme === 'https' ? 443 : 80));
+        };
+
+        return $origin($one) !== null && $origin($one) === $origin($other);
     }
 
     private function signIn(Request $request, string $email): Response|RedirectResponse
@@ -108,7 +190,7 @@ class SignInController extends Controller
     public function confirm(Request $request): Response|RedirectResponse
     {
         if (! SignIn::enabled()) {
-            return $this->page('turned_off_here', 403);
+            return $this->page(SignIn::offReason(), 403);
         }
 
         $claim = $this->readSwitchToken($request->input('token'));
@@ -224,6 +306,10 @@ class SignInController extends Controller
             ->view('porro::sign-in', ['reason' => $reason, 'email' => $email] + $data, $status)
             // A sign-in answer is for this visitor once, never for a cache.
             ->header('Cache-Control', 'no-store, private')
-            ->header('Referrer-Policy', 'no-referrer');
+            ->header('Referrer-Policy', 'no-referrer')
+            // And never inside another site's frame, where "Switch" could
+            // be dressed up as something else.
+            ->header('Content-Security-Policy', "frame-ancestors 'none'")
+            ->header('X-Frame-Options', 'DENY');
     }
 }

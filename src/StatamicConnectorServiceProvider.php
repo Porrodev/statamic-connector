@@ -72,16 +72,26 @@ class StatamicConnectorServiceProvider extends ServiceProvider
 
         // Sign in from Porro, at /!/porro/sign-in with Statamic's default
         // action prefix. Porro's page posts the ticket from another origin,
-        // so there's no CSRF token to check; the ticket, redeemed with the
-        // site's own key, is what proves the request. Throttled per IP.
+        // where browsers hold the session cookie back. So the first step
+        // runs without the web group: no session, no cookies, nothing
+        // signed in. Its page posts the ticket on to the second step, from
+        // this site, where the session is there to check. Neither has a
+        // CSRF token to check; the ticket, redeemed with the site's own
+        // key, is what proves the request. Throttled per IP, each step
+        // with its own count.
         // Laravel 13's web group checks with PreventRequestForgery, 11 and
         // 12's with ValidateCsrfToken; naming a class that isn't there is
-        // harmless.
+        // harmless, and an app's own subclass is left out with them.
         Statamic::pushActionRoutes(function () {
-            Route::post('porro/sign-in', SignInController::class)
-                ->middleware('throttle:10,1')
-                ->withoutMiddleware([PreventRequestForgery::class, ValidateCsrfToken::class, VerifyCsrfToken::class])
+            Route::post('porro/sign-in', [SignInController::class, 'start'])
+                ->middleware('throttle:10,1,porro-sign-in-start')
+                ->withoutMiddleware(['web', 'statamic.web'])
                 ->name('porro.sign-in');
+
+            Route::post('porro/sign-in/continue', SignInController::class)
+                ->middleware('throttle:10,1,porro-sign-in')
+                ->withoutMiddleware([PreventRequestForgery::class, ValidateCsrfToken::class, VerifyCsrfToken::class])
+                ->name('porro.sign-in.continue');
 
             // Switching from an account that's already signed in. Posted by
             // the site's own confirmation page, so CSRF is checked as usual.

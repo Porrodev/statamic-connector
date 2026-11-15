@@ -19,12 +19,26 @@ beforeEach(function () {
     User::all()->each->delete();
 
     $this->key = siteKey();
-    config(['porro.key' => $this->key]);
+    // Tests aren't the live site, so sign-in is turned on by hand.
+    config(['porro.key' => $this->key, 'porro.sign_in' => true]);
+
+    // As the site's own page posts the ticket on to the second step.
+    $this->withHeader('Sec-Fetch-Site', 'same-origin');
 });
 
-function signInUrl(): string
+// What a browser sends with a post from Porro's page.
+const FROM_PORRO = ['Origin' => 'https://porro.test'];
+
+// Where Porro's page posts the ticket, from another site.
+function startUrl(): string
 {
     return '/!/porro/sign-in';
+}
+
+// Where this site's own page posts it on.
+function signInUrl(): string
+{
+    return '/!/porro/sign-in/continue';
 }
 
 function porroAnswers(int $status, array $body): void
@@ -51,7 +65,102 @@ function publicKey(string $token): string
 }
 
 it('lives at /!/porro/sign-in', function () {
-    expect(route('statamic.porro.sign-in', absolute: false))->toBe(signInUrl());
+    expect(route('statamic.porro.sign-in', absolute: false))->toBe(startUrl())
+        ->and(route('statamic.porro.sign-in.continue', absolute: false))->toBe(signInUrl());
+});
+
+it('starts without a session, and hands the ticket on from this site’s own page', function () {
+    Http::fake();
+    $user = editorWithCp();
+    $route = Route::getRoutes()->getByName('statamic.porro.sign-in');
+
+    // Posted from Porro's page, so the browser holds the session cookie back.
+    $response = $this->withHeader('Sec-Fetch-Site', 'cross-site')->post(startUrl(), ['ticket' => TICKET], FROM_PORRO)
+        ->assertOk()
+        ->assertSee('action="'.route('statamic.porro.sign-in.continue').'"', false)
+        ->assertSee('name="ticket" value="'.TICKET.'"', false)
+        ->assertHeader('Cache-Control', 'no-store, private')
+        ->assertHeader('X-Frame-Options', 'DENY')
+        ->assertHeader('Content-Security-Policy', "frame-ancestors 'none'");
+
+    // No session started: a new one would replace whoever is signed in.
+    expect($response->headers->getCookies())->toBe([])
+        ->and(app('router')->gatherRouteMiddleware($route))->toBe(['Illuminate\Routing\Middleware\ThrottleRequests:10,1,porro-sign-in-start'])
+        ->and(Auth::check())->toBeFalse();
+    Http::assertNothingSent();
+});
+
+it('starts nothing for something that isn’t a ticket, or a ticket in the address', function () {
+    $this->post(startUrl(), ['ticket' => 'abc'], FROM_PORRO)->assertStatus(410)->assertDontSee('name="ticket"', false);
+    $this->post(startUrl().'?ticket='.TICKET, [], FROM_PORRO)->assertStatus(410)->assertDontSee(TICKET);
+    $this->post(startUrl().'?ticket='.TICKET, ['ticket' => TICKET], FROM_PORRO)->assertStatus(410)->assertDontSee(TICKET);
+});
+
+it('only starts for a ticket posted from Porro’s own page', function (array $headers) {
+    // Any other site could post a ticket of its own, to have this site's
+    // page sign a visitor in to its account.
+    $this->post(startUrl(), ['ticket' => TICKET], $headers)
+        ->assertStatus(410)
+        ->assertDontSee(TICKET);
+})->with([
+    'another site' => [['Origin' => 'https://evil.example']],
+    'a page that hides its origin' => [['Origin' => 'null']],
+    'no origin at all' => [[]],
+    'Porro’s host over plain http' => [['Origin' => 'http://porro.test']],
+    'Porro’s host on another port' => [['Origin' => 'https://porro.test:8443']],
+    'a host that starts like Porro’s' => [['Origin' => 'https://porro.test.evil.example']],
+]);
+
+it('only signs in from this site’s own page', function (array $headers, bool $allowed) {
+    porroAnswers(200, ['ok' => true, 'email' => 'daniel@1994.co.uk', 'name' => 'Daniel Jones']);
+    editorWithCp();
+
+    $response = $this->withoutHeader('Sec-Fetch-Site')->post(signInUrl(), ['ticket' => TICKET], $headers);
+
+    if ($allowed) {
+        $response->assertRedirect(cp_route('index'));
+
+        return;
+    }
+
+    // Turned away before Porro is asked, so the ticket isn't spent.
+    $response->assertStatus(410);
+    Http::assertNothingSent();
+    expect(Auth::check())->toBeFalse();
+})->with([
+    'another site' => [['Sec-Fetch-Site' => 'cross-site'], false],
+    'another site, same registrable domain' => [['Sec-Fetch-Site' => 'same-site'], false],
+    'another site claiming this origin' => [['Sec-Fetch-Site' => 'cross-site', 'Origin' => 'http://localhost'], false],
+    'no word on where it came from' => [[], false],
+    'an older browser, another origin' => [['Origin' => 'https://evil.example'], false],
+    'an older browser, this host on another port' => [['Origin' => 'http://localhost:8080'], false],
+    'an older browser, this host over https' => [['Origin' => 'https://localhost'], false],
+    'an older browser, this origin' => [['Origin' => 'http://localhost'], true],
+]);
+
+it('won’t take a ticket from the address', function () {
+    Http::fake();
+
+    $this->post(signInUrl().'?ticket='.TICKET)->assertStatus(410);
+    $this->post(signInUrl().'?ticket='.TICKET, ['ticket' => TICKET])->assertStatus(410);
+
+    Http::assertNothingSent();
+});
+
+it('is off on a copy of the site that isn’t live, unless the copy turns it on', function () {
+    Http::fake();
+    config(['porro.sign_in' => null]);
+
+    $this->post(startUrl(), ['ticket' => TICKET], FROM_PORRO)->assertForbidden()->assertSee('works on the live site only');
+    $this->post(signInUrl(), ['ticket' => TICKET])->assertForbidden()->assertSee('works on the live site only');
+    Http::assertNothingSent();
+
+    $this->app['env'] = 'production';
+    $this->post(startUrl(), ['ticket' => TICKET], FROM_PORRO)->assertOk();
+
+    $this->app['env'] = 'staging';
+    config(['porro.sign_in' => 'true']);
+    $this->post(startUrl(), ['ticket' => TICKET], FROM_PORRO)->assertOk();
 });
 
 it('signs the member in to the control panel and sends them to the dashboard', function () {
@@ -189,10 +298,6 @@ it('is turned off by PORRO_SIGN_IN=false without asking Porro', function () {
     expect(Auth::check())->toBeFalse();
 });
 
-it('is on unless the site turns it off', function () {
-    expect(config('porro.sign_in'))->toBeTrue();
-});
-
 it('says Porro couldn’t be reached when it can’t be', function () {
     Http::fake(fn () => throw new ConnectionException('cURL error 28 while posting '.TICKET));
     editorWithCp();
@@ -238,11 +343,16 @@ it('says the site isn’t connected when it has no site key', function () {
 });
 
 it('takes the ticket without a CSRF token, as it comes from Porro', function () {
-    $route = Route::getRoutes()->getByName('statamic.porro.sign-in');
+    $route = Route::getRoutes()->getByName('statamic.porro.sign-in.continue');
+    $middleware = app('router')->gatherRouteMiddleware($route);
+
+    // Not the class Laravel ships, nor an app's own subclass of it.
+    $checksCsrf = collect($middleware)->contains(fn ($class) => is_string($class) && collect([ValidateCsrfToken::class, VerifyCsrfToken::class, PreventRequestForgery::class])
+        ->contains(fn (string $csrf) => is_a($class, $csrf, true)));
 
     expect($route->methods())->toBe(['POST'])
-        ->and(app('router')->gatherRouteMiddleware($route))->not->toContain(ValidateCsrfToken::class, VerifyCsrfToken::class, PreventRequestForgery::class)
-        ->and(app('router')->gatherRouteMiddleware($route))->toContain('Illuminate\Routing\Middleware\ThrottleRequests:10,1');
+        ->and($checksCsrf)->toBeFalse()
+        ->and($middleware)->toContain('Illuminate\Routing\Middleware\ThrottleRequests:10,1,porro-sign-in');
 });
 
 it('is limited to 10 tries a minute from one IP', function () {
@@ -302,7 +412,10 @@ it('asks before switching away from someone else who’s signed in', function ()
         ->assertSee('You’re signed in as client@example.com. Switch to daniel@1994.co.uk?', false)
         ->assertSee(route('statamic.porro.sign-in.confirm'))
         ->assertDontSee(TICKET)
-        ->assertHeader('Cache-Control', 'no-store, private');
+        ->assertHeader('Cache-Control', 'no-store, private')
+        // Never in another site's frame, with "Switch" dressed up as something else.
+        ->assertHeader('X-Frame-Options', 'DENY')
+        ->assertHeader('Content-Security-Policy', "frame-ancestors 'none'");
 
     // The ticket is spent, but no one has been swapped yet.
     Http::assertSentCount(1);
@@ -372,6 +485,8 @@ it('checks CSRF on the switch, as it’s posted from the site itself', function 
     expect($route->methods())->toBe(['POST'])
         ->and($checksCsrf)->toBeTrue();
 
+    // Laravel 13 lets a same-origin post through on the browser's word;
+    // without it, only the token will do.
     $this->app['env'] = 'production';
-    $this->post(route('statamic.porro.sign-in.confirm'), ['token' => 'x'])->assertStatus(419);
+    $this->withoutHeader('Sec-Fetch-Site')->post(route('statamic.porro.sign-in.confirm'), ['token' => 'x'])->assertStatus(419);
 });

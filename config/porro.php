@@ -7,6 +7,8 @@ return [
     // Porro members can sign in to this site's control panel from the site
     // page in Porro, once "Sign in to client sites" is on for the workspace.
     // Set PORRO_SIGN_IN=false to turn it off here, whatever Porro says.
-    'sign_in' => env('PORRO_SIGN_IN', true),
+    // Left unset, it's on for the live site (APP_ENV=production) and off
+    // on staging and local copies; PORRO_SIGN_IN=true turns it on there.
+    'sign_in' => env('PORRO_SIGN_IN'),
 
 ];
