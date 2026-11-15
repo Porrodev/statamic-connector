@@ -7,32 +7,44 @@ parameters:
 			path: src/Http/BlockingController.php
 
 		-
-			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
-			identifier: argument.type
-			count: 4
+			message: '#^Method Porro\\Statamic\\Http\\BlockingController\:\:cloudflare\(\) should return Illuminate\\View\\View but returns Illuminate\\Contracts\\View\\View\.$#'
+			identifier: return.type
+			count: 1
 			path: src/Http/BlockingController.php
 
 		-
-			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
-			identifier: argument.type
+			message: '#^Method Porro\\Statamic\\Http\\BlockingController\:\:index\(\) should return Illuminate\\View\\View but returns Illuminate\\Contracts\\View\\View\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Http/BlockingController.php
+
+		-
+			message: '#^Method Porro\\Statamic\\Http\\BlockingController\:\:list\(\) should return Illuminate\\View\\View but returns Illuminate\\Contracts\\View\\View\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Http/BlockingController.php
+
+		-
+			message: '#^Method Porro\\Statamic\\Http\\BlockingController\:\:nginx\(\) should return Illuminate\\View\\View but returns Illuminate\\Contracts\\View\\View\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Http/BlockingController.php
+
+		-
+			message: '#^Method Porro\\Statamic\\Http\\IpController\:\:show\(\) should return Illuminate\\View\\View but returns Illuminate\\Contracts\\View\\View\.$#'
+			identifier: return.type
 			count: 1
 			path: src/Http/IpController.php
 
 		-
-			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
-			identifier: argument.type
+			message: '#^Method Porro\\Statamic\\Http\\SiteHealthController\:\:index\(\) should return Illuminate\\View\\View but returns Illuminate\\Contracts\\View\\View\.$#'
+			identifier: return.type
 			count: 1
 			path: src/Http/SiteHealthController.php
 
 		-
 			message: '#^Method Porro\\Statamic\\SiteHealthWidget\:\:html\(\) has no return type specified\.$#'
 			identifier: missingType.return
-			count: 1
-			path: src/SiteHealthWidget.php
-
-		-
-			message: '#^Parameter \#1 \$view of function view expects view\-string\|null, string given\.$#'
-			identifier: argument.type
 			count: 1
 			path: src/SiteHealthWidget.php
 
@@ -45,5 +57,29 @@ parameters:
 		-
 			message: '#^Call to function method_exists\(\) with ''Statamic\\\\Updater\\\\UpdatesOverview'' and ''hasSecurityUpdate'' will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/StatamicHealth.php
+
+		-
+			message: '#^Call to static method count\(\) on an unknown class Facades\\Statamic\\Updater\\UpdatesOverview\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/StatamicHealth.php
+
+		-
+			message: '#^Call to static method hasSecurityUpdate\(\) on an unknown class Facades\\Statamic\\Updater\\UpdatesOverview\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/StatamicHealth.php
+
+		-
+			message: '#^Call to static method hasStatamicUpdate\(\) on an unknown class Facades\\Statamic\\Updater\\UpdatesOverview\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/StatamicHealth.php
+
+		-
+			message: '#^Call to static method updatableAddons\(\) on an unknown class Facades\\Statamic\\Updater\\UpdatesOverview\.$#'
+			identifier: class.notFound
 			count: 1
 			path: src/StatamicHealth.php

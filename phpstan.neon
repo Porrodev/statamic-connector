@@ -1,5 +1,5 @@
 includes:
-    - vendor/1994/coding-standard/phpstan/laravel.neon
+    - vendor/1994/coding-standard/phpstan/base.neon
     - phpstan-baseline.neon
 
 parameters:

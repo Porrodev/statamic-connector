@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Statamic 5 sites on Laravel 10 can install the connector, with `porro/laravel-connector` 0.3.8 or later. CI now tests Laravel 10 too.
 - The README has a Scheduling reports section: how to run Laravel's scheduler on Forge, Ploi, Laravel Cloud, Vapor, Envoyer, cPanel, Plesk and plain servers, always from the `current` folder on zero-downtime deploys.
 - With `porro/laravel-connector` and `porro/php-core` 0.3.6, `php please porro:cron` points the cron line at the `current` folder and sends a report straight away once the site is connected.
 
