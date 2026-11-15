@@ -7,7 +7,9 @@ use Illuminate\Http\Request;
 use Porro\Core\Health\Issue;
 use Porro\Core\Report;
 use Porro\Laravel\Activity\Presenter;
+use Porro\Laravel\Connect\PanelConnect;
 use Porro\Laravel\SiteHealth;
+use Porro\Laravel\SiteKeys;
 use Statamic\Facades\User;
 use Throwable;
 
@@ -25,6 +27,8 @@ class Panel
 
     public const MANAGE = 'manage porro blocklist';
 
+    public const CONNECT = 'connect porro';
+
     public const SEVERITIES = [
         Issue::CRITICAL => ['label' => 'Act now', 'color' => 'red', 'hex' => '#dc2626'],
         Issue::WARNING => ['label' => 'Needs attention', 'color' => 'amber', 'hex' => '#d97706'],
@@ -33,7 +37,7 @@ class Panel
 
     private const COMMANDS = ['connect' => 'php please porro:connect <site key>', 'cron' => 'php please porro:cron'];
 
-    public function __construct(private SiteHealth $health, private Presenter $presenter) {}
+    public function __construct(private SiteHealth $health, private Presenter $presenter, private PanelConnect $connect, private SiteKeys $keys) {}
 
     public static function can(string $permission): bool
     {
@@ -71,6 +75,7 @@ class Panel
             'failed' => $health === null && ! $cachedOnly,
             'pending' => $health === null && $cachedOnly,
             'connected' => $health['connected'] ?? false,
+            'connect' => $this->connect($health['connected'] ?? false, $porro['site_url'] ?? null),
             'enabled' => $health['enabled'] ?? true,
             'porro' => $porro,
             'porroOk' => $porro['ok'] ?? false,
@@ -96,6 +101,62 @@ class Panel
             'icon' => self::ICON,
             'severities' => self::SEVERITIES,
         ];
+    }
+
+    /**
+     * The "Connect to Porro" panel at the top of Site Health.
+     *
+     * The live site with no key shows the button, to whoever may connect.
+     * A copy that isn't production shows why it doesn't connect instead.
+     * A site connected from here says who to. A site with PORRO_KEY in its
+     * environment shows none of this: it's connected the way it always was.
+     *
+     * @return array{panel: bool, upsell: bool, state: string, url: string, mark: string, environment: string, porroHost: string, workspace: string|null, approvedAgo: string|null, openUrl: string}
+     */
+    private function connect(bool $connected, ?string $siteUrl): array
+    {
+        $state = $this->connect->state();
+        $stored = $state === PanelConnect::CONNECTED ? $this->keys->stored() : null;
+        $panel = match ($state) {
+            PanelConnect::READY => self::can(self::CONNECT),
+            PanelConnect::DEVELOPMENT, PanelConnect::CONNECTED => true,
+            default => false,
+        };
+
+        return [
+            'panel' => $panel,
+            // The "run this command" copy, for whoever sees no panel and isn't connected.
+            'upsell' => ! $panel && ! $connected,
+            'state' => $state,
+            'url' => cp_route('porro.connect.start'),
+            'mark' => 'data:image/svg+xml;base64,'.base64_encode((string) file_get_contents(__DIR__.'/../resources/svg/porro-mark.svg')),
+            'environment' => (string) app()->environment(),
+            'porroHost' => self::porroHost(),
+            'workspace' => $stored['workspace'] ?? null,
+            'approvedAgo' => self::since($stored['connected_at'] ?? null),
+            'openUrl' => $siteUrl ?? rtrim((string) config('porro.url'), '/'),
+        ];
+    }
+
+    /**
+     * Where the button takes the browser, as people know it: "porro.dev".
+     */
+    private static function porroHost(): string
+    {
+        $host = (string) parse_url((string) config('porro.url'), PHP_URL_HOST);
+
+        return $host === 'app.porro.dev' || $host === '' ? 'porro.dev' : $host;
+    }
+
+    private static function since(?string $at): ?string
+    {
+        if (! $at || strtotime($at) === false) {
+            return null;
+        }
+
+        $at = Carbon::parse($at);
+
+        return $at->gt(now()->subMinute()) ? __('a moment ago') : $at->diffForHumans();
     }
 
     /**

@@ -48,7 +48,7 @@ function utilityUrl(): string
     return cp_route('porro.index');
 }
 
-it('shows the site’s health without a Porro account, with the connect command', function () {
+it('shows the site’s health without a Porro account', function () {
     config(['porro.key' => null]);
 
     $html = utilityHtml($this->actingAs(superUser())->get(utilityUrl())->assertOk());
@@ -58,8 +58,6 @@ it('shows the site’s health without a Porro account, with the connect command'
         ->toContain('Checked on this site')
         ->toContain('2 updates available')
         ->toContain('Scheduler isn’t running')
-        ->toContain('Watch this site from outside too')
-        ->toContain('php please porro:connect &lt;site key&gt;')
         ->not->toContain('From Porro');
 
     Http::assertNotSent(fn ($request) => str_contains($request->url(), 'porro.test'));
