@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- **Disconnect from Porro in the control panel.** A site connected with the **Connect to Porro** button now has a **Disconnect** button beside **Open in Porro**, for super admins and roles with **Connect the site to Porro**. It asks first, and says what stops and what carries on. Disconnecting tells Porro, stops the reports and deletes the key from the site's database. The checks on Site Health still run, and Porro keeps the site and its history until someone removes it there. If Porro can't be reached the key is deleted all the same, and Site Health says Porro hasn't been told. You can connect again at any time.
+- `php please porro:disconnect` does the same from the terminal. `--force` skips the question.
+- Only the live site can be disconnected. A staging or local copy of the live database holds the live site's key, so it has no button, and the command refuses there unless you pass `--live`.
+- A site connected with `PORRO_KEY` in its environment has no button: Site Health says to remove `PORRO_KEY` there and deploy.
+- When the site is removed in Porro, or given a new key there, Porro turns the old key away. The site then deletes it and Site Health says **No longer connected to Porro**, with when reports stopped and the button to connect again.
+- Requires `porro/laravel-connector` 0.3.11 and `porro/php-core` 0.3.9.
+
 ## 0.5.1 - 2026-11-16
 
 - The **Connect to Porro** button is near-white in the control panel's dark mode. It was black on a dark card and easy to miss.

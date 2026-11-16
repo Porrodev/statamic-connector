@@ -8,6 +8,7 @@ use Porro\Core\Health\Issue;
 use Porro\Core\Report;
 use Porro\Laravel\Activity\Presenter;
 use Porro\Laravel\Connect\PanelConnect;
+use Porro\Laravel\Reporting;
 use Porro\Laravel\SiteHealth;
 use Porro\Laravel\SiteKeys;
 use Statamic\Facades\User;
@@ -28,6 +29,9 @@ class Panel
     public const MANAGE = 'manage porro blocklist';
 
     public const CONNECT = 'connect porro';
+
+    // Flashed by the disconnect route, for the notice on the next page view.
+    public const DISCONNECTED = 'porro.disconnected';
 
     public const SEVERITIES = [
         Issue::CRITICAL => ['label' => 'Act now', 'color' => 'red', 'hex' => '#dc2626'],
@@ -76,6 +80,7 @@ class Panel
             'pending' => $health === null && $cachedOnly,
             'connected' => $health['connected'] ?? false,
             'connect' => $this->connect($health['connected'] ?? false, $porro['site_url'] ?? null),
+            'disconnected' => self::disconnected(),
             'enabled' => $health['enabled'] ?? true,
             'porro' => $porro,
             'porroOk' => $porro['ok'] ?? false,
@@ -108,16 +113,19 @@ class Panel
      *
      * The live site with no key shows the button, to whoever may connect.
      * A copy that isn't production shows why it doesn't connect instead.
-     * A site connected from here says who to. A site with PORRO_KEY in its
-     * environment shows none of this: it's connected the way it always was.
+     * A site connected from here says who to, and whoever may connect can
+     * disconnect it. A site whose key Porro turned away says so until it
+     * connects again. A site with PORRO_KEY in its environment shows no
+     * panel: only, to whoever may connect, how to disconnect it.
      *
-     * @return array{panel: bool, upsell: bool, state: string, url: string, mark: string, environment: string, porroHost: string, workspace: string|null, approvedAgo: string|null, openUrl: string}
+     * @return array{panel: bool, upsell: bool, state: string, button: bool, url: string, mark: string, environment: string, porroHost: string, workspace: string|null, approvedAgo: string|null, openUrl: string, canDisconnect: bool, disconnectUrl: string, host: string|null, envKey: bool, turnedAway: array{workspace: string|null, date: string|null, time: string|null}|null}
      */
     private function connect(bool $connected, ?string $siteUrl): array
     {
         $state = $this->connect->state();
         $stored = $state === PanelConnect::CONNECTED ? $this->keys->stored() : null;
-        $panel = match ($state) {
+        $turnedAway = in_array($state, [PanelConnect::READY, PanelConnect::DEVELOPMENT, PanelConnect::OFF], true) ? $this->turnedAway() : null;
+        $panel = $turnedAway !== null || match ($state) {
             PanelConnect::READY => self::can(self::CONNECT),
             PanelConnect::DEVELOPMENT, PanelConnect::CONNECTED => true,
             default => false,
@@ -128,6 +136,15 @@ class Panel
             // The "run this command" copy, for whoever sees no panel and isn't connected.
             'upsell' => ! $panel && ! $connected,
             'state' => $state,
+            'button' => $state === PanelConnect::READY && self::can(self::CONNECT),
+            // Whoever may connect may disconnect, and only a key kept here.
+            // Never on a copy that isn't the live site: it holds the live
+            // site's key, and disconnecting would switch the live site off.
+            'canDisconnect' => $state === PanelConnect::CONNECTED && Reporting::production() && self::can(self::CONNECT),
+            'disconnectUrl' => cp_route('porro.disconnect'),
+            'host' => $stored['host'] ?? null,
+            'envKey' => $state === PanelConnect::ENV && self::can(self::CONNECT),
+            'turnedAway' => $turnedAway,
             'url' => cp_route('porro.connect.start'),
             'mark' => 'data:image/svg+xml;base64,'.base64_encode((string) file_get_contents(__DIR__.'/../resources/svg/porro-mark.svg')),
             'environment' => (string) app()->environment(),
@@ -135,6 +152,55 @@ class Panel
             'workspace' => $stored['workspace'] ?? null,
             'approvedAgo' => self::since($stored['connected_at'] ?? null),
             'openUrl' => $siteUrl ?? rtrim((string) config('porro.url'), '/'),
+        ];
+    }
+
+    /**
+     * Porro turned the stored key away: who it was for, and when reports
+     * stopped, in the site's own timezone.
+     *
+     * @return array{workspace: string|null, date: string|null, time: string|null}|null
+     */
+    private function turnedAway(): ?array
+    {
+        $away = $this->keys->turnedAway();
+
+        if ($away === null) {
+            return null;
+        }
+
+        $at = $away['at'] !== null && strtotime($away['at']) !== false
+            ? Carbon::parse($away['at'])->timezone((string) config('app.timezone'))
+            : null;
+
+        return [
+            'workspace' => $away['workspace'],
+            'date' => $at?->translatedFormat('j F'),
+            'time' => $at?->format('H:i'),
+        ];
+    }
+
+    /**
+     * The one-off notice after disconnecting: whether Porro was told.
+     *
+     * @return array{title: string, body: string}|null
+     */
+    private static function disconnected(): ?array
+    {
+        $flash = session(self::DISCONNECTED);
+
+        if (! is_array($flash)) {
+            return null;
+        }
+
+        $workspace = is_string($flash['workspace'] ?? null) && $flash['workspace'] !== '' ? $flash['workspace'] : 'Porro';
+
+        return ($flash['told'] ?? false) === true ? [
+            'title' => __('Disconnected from :workspace', ['workspace' => $workspace]),
+            'body' => __('This site no longer sends reports, and its key has been deleted. :workspace still has the site in Porro; someone in that workspace can remove it there.', ['workspace' => $workspace]),
+        ] : [
+            'title' => __('Disconnected on this site'),
+            'body' => __('The key has been deleted and reports have stopped. Porro didn’t answer, so it hasn’t been told: :workspace will see this site as not reporting, not as disconnected.', ['workspace' => $workspace]),
         ];
     }
 
