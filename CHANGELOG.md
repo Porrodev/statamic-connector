@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 - 2026-11-16
 
 - **Sign in from Porro**: with Porro's **Sign in to client sites** on, **Sign in to Statamic** on the site page in Porro opens the control panel signed in, without a password. Porro posts a one-time, 60-second ticket to `/!/porro/sign-in`; the site redeems it with Porro using its own site key and signs in the Statamic user with the member's email. It never creates users or changes roles, and only signs in users who can use the control panel. It signs in no one when two accounts share the email in different cases, and asks before switching away from someone already signed in. It's on for the live site and off on staging and local copies unless they set `PORRO_SIGN_IN=true`; `PORRO_SIGN_IN=false` turns it off on the site.
 - Statamic 5 sites on Laravel 10 can install the connector, with `porro/laravel-connector` 0.3.8 or later. CI now tests Laravel 10 too.
