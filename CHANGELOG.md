@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The **Connect to Porro** button is near-white in the control panel's dark mode. It was black on a dark card and easy to miss.
+
 ## 0.5.0 - 2026-11-16
 
 - **Connect to Porro from the control panel.** On the live site, Site Health has a **Connect to Porro** button in place of the `porro:connect` command: it opens Porro to sign in and approve, and the site is connected when the browser comes back. No key to copy. The key is made on the site and kept encrypted in its database; `PORRO_KEY` in the environment still wins, so sites connected that way are unchanged. Requires `porro/laravel-connector` 0.3.10 and `porro/php-core` 0.3.8, and `php artisan migrate` for the new `porro_settings` table.
