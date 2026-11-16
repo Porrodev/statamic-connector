@@ -15,7 +15,14 @@
         @include('porro::partials.summary')
     </p>
 
+    @includeWhen($disconnected, 'porro::v6.disconnected')
+
     @includeWhen($connect['panel'], 'porro::v6.connect')
+
+    @if ($connect['envKey'])
+        {{-- A key from the environment has no card and no Disconnect button: only how to do it. --}}
+        <p class="text-gray-500 dark:text-gray-500" style="font-size: 13px; line-height: 1.5">{{ __('To disconnect, remove PORRO_KEY from the environment and deploy. The control panel can’t change it.') }}</p>
+    @endif
 
     @if ($failed)
         <ui-card>

@@ -347,6 +347,9 @@ describe('on Statamic 5', function () {
     // control panel's view is rendered on its own here.
     $connect = fn (string $state, array $more = []) => view('porro::v5.connect', ['connect' => $more + [
         'state' => $state,
+        'button' => $state === 'ready',
+        'canDisconnect' => false,
+        'turnedAway' => null,
         'url' => 'https://harbour-arts.org/cp/porro/connect',
         'mark' => 'data:image/svg+xml;base64,AAAA',
         'environment' => 'staging',

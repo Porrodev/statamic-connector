@@ -32,7 +32,7 @@ class StatamicConnectorServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'porro');
 
         if ($this->app->runningInConsole()) {
-            $this->commands([PleaseConnectCommand::class, PleaseCronCommand::class]);
+            $this->commands([PleaseConnectCommand::class, PleaseCronCommand::class, PleaseDisconnectCommand::class]);
         }
 
         // Its own "Porro" section in the nav, rather than tucked under
@@ -57,6 +57,7 @@ class StatamicConnectorServiceProvider extends ServiceProvider
                 Route::post('refresh', [SiteHealthController::class, 'refresh'])->name('refresh');
                 Route::post('connect', [ConnectController::class, 'start'])->name('connect.start');
                 Route::get('connect', [ConnectController::class, 'return'])->name('connect.return');
+                Route::post('disconnect', [ConnectController::class, 'disconnect'])->name('disconnect');
                 Route::get('activity/{ip}', [IpController::class, 'show'])->name('ip')->where('ip', '[0-9A-Fa-f:.]+');
                 Route::post('activity/{ip}/reputation', [IpController::class, 'reputation'])->name('reputation')->where('ip', '[0-9A-Fa-f:.]+');
                 Route::get('blocking', [BlockingController::class, 'index'])->name('blocking');
@@ -107,6 +108,10 @@ class StatamicConnectorServiceProvider extends ServiceProvider
         // Opens the block and safelist confirmation dialog. Vue drops script
         // tags from CP templates, so it comes in with the CP's own scripts.
         Statamic::inlineScript(Confirm::script());
+
+        // Opens the classic control panel's "Disconnect from Porro" dialog.
+        // Statamic 6 uses its own modal and needs no script.
+        Statamic::inlineScript((string) file_get_contents(__DIR__.'/../resources/js/dialog.js'));
 
         SiteHealthWidget::register();
     }
