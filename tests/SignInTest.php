@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
 use Porro\Core\SiteKey;
+use Porro\Laravel\SiteKeys;
 use Statamic\Facades\Role;
 use Statamic\Facades\User;
 
@@ -223,6 +224,25 @@ it('redeems the ticket with a request signed by the site key', function () {
 
         return true;
     });
+});
+
+it('signs in with the key made by Connect to Porro in the control panel', function () {
+    config(['porro.key' => null]);
+    $this->artisan('migrate');
+    $key = SiteKey::generate()->withSite(SiteKey::parse($this->key)->siteId);
+    app(SiteKeys::class)->store($key);
+
+    porroAnswers(200, ['ok' => true, 'email' => 'sam@example.com', 'name' => 'Sam Patel']);
+    $user = editorWithCp();
+
+    $this->post(signInUrl(), ['ticket' => TICKET])->assertRedirect(cp_route('index'));
+
+    expect(Auth::guard(config('statamic.users.guards.cp'))->id())->toBe($user->id());
+    Http::assertSent(fn (Request $request) => sodium_crypto_sign_verify_detached(
+        base64_decode($request->header('X-Porro-Signature')[0]),
+        SiteKey::message('POST', '/api/v1/sign-in/redeem', $request->header('X-Porro-Timestamp')[0], $request->header('X-Porro-Nonce')[0], $request->body()),
+        publicKey($key->token()),
+    ));
 });
 
 it('says the link has expired when Porro has already used it, and signs no one in', function () {

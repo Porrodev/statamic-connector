@@ -15,6 +15,8 @@
         @include('porro::partials.summary')
     </p>
 
+    @includeWhen($connect['panel'], 'porro::v6.connect')
+
     @if ($failed)
         <ui-card>
             <p class="text-sm">{{ __('The checks couldn’t run just now. Try again in a minute; the error is in the Laravel log.') }}</p>
@@ -53,11 +55,11 @@
 
     @includeWhen($activity, 'porro::v6.activity')
 
-    @unless ($connected)
+    @if ($connect['upsell'])
         <ui-panel heading="{{ __('Watch this site from outside too') }}">
             <ui-card>
                 @include('porro::partials.upsell')
             </ui-card>
         </ui-panel>
-    @endunless
+    @endif
 </div>

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Porro\Laravel\Activity\Confirm;
 use Porro\Statamic\Http\BlockingController;
+use Porro\Statamic\Http\ConnectController;
 use Porro\Statamic\Http\IpController;
 use Porro\Statamic\Http\SignInController;
 use Porro\Statamic\Http\SiteHealthController;
@@ -36,11 +37,12 @@ class StatamicConnectorServiceProvider extends ServiceProvider
 
         // Its own "Porro" section in the nav, rather than tucked under
         // Utilities: Site Health and Blocking, each behind a permission.
-        // Super admins always have both.
+        // Connecting to Porro has its own. Super admins always have all three.
         Permission::extend(function () {
             Permission::group('porro', __('Porro'), function () {
                 Permission::register(Panel::VIEW)->label(__('View Porro Site Health'));
                 Permission::register(Panel::MANAGE)->label(__('Block and safelist IP addresses'));
+                Permission::register(Panel::CONNECT)->label(__('Connect the site to Porro'));
             });
         });
 
@@ -53,6 +55,8 @@ class StatamicConnectorServiceProvider extends ServiceProvider
             Route::prefix('porro')->name('porro.')->group(function () {
                 Route::get('/', [SiteHealthController::class, 'index'])->name('index');
                 Route::post('refresh', [SiteHealthController::class, 'refresh'])->name('refresh');
+                Route::post('connect', [ConnectController::class, 'start'])->name('connect.start');
+                Route::get('connect', [ConnectController::class, 'return'])->name('connect.return');
                 Route::get('activity/{ip}', [IpController::class, 'show'])->name('ip')->where('ip', '[0-9A-Fa-f:.]+');
                 Route::post('activity/{ip}/reputation', [IpController::class, 'reputation'])->name('reputation')->where('ip', '[0-9A-Fa-f:.]+');
                 Route::get('blocking', [BlockingController::class, 'index'])->name('blocking');

@@ -36,6 +36,7 @@ Super admins. For other roles, under **Porro** in **Users → Roles**:
 
 - **View Porro Site Health** shows both pages, the widget and the "Check again" button.
 - **Block and safelist IP addresses** adds the block, unblock and safelist buttons.
+- **Connect the site to Porro** adds the **Connect to Porro** button on Site Health.
 
 Upgrading from 0.2? The old **Access Porro Site Health utility** permission isn't used any more. Give those roles **View Porro Site Health** instead.
 
@@ -94,6 +95,8 @@ Site Health then shows the site's open findings in Porro alongside the checks ab
 ![Porro Site Health connected to Porro, in dark mode: an end-of-life server, an expiring certificate and domain, and a slow region, above the checks run on the site](https://raw.githubusercontent.com/Porrodev/statamic-connector/main/docs/images/statamic-site-health-dark.png)
 
 Connecting also sends Porro a signed report every 15 minutes on Laravel's scheduler: versions, packages and the health facts above, never content, users or settings values. Run `php artisan porro:status --json` to see exactly what would be sent, and see the [Laravel connector](https://github.com/Porrodev/laravel-connector) for config and commands.
+
+Or connect from the control panel, with no key to copy. On the live site, **Porro → Site Health** has a **Connect to Porro** button for super admins and roles with **Connect the site to Porro**. It opens Porro, where you sign in and approve, and brings you back connected. The key is made on the site and kept encrypted in its database (run `php artisan migrate` first, for the `porro_settings` table). `PORRO_KEY` in the environment wins when it's set. A copy whose `APP_ENV` isn't production has no button and says why.
 
 `php please porro:connect` offers to add the scheduler's cron line; `php please porro:cron` adds it on its own and, once the site is connected, sends a report straight away. See [Scheduling reports](#scheduling-reports) to add it on Forge, Ploi, Laravel Cloud and other hosts.
 

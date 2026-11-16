@@ -12,6 +12,8 @@
 
 @include('porro::v5.flash')
 
+@includeWhen($connect['panel'], 'porro::v5.connect')
+
 @if ($failed)
     <div class="card mb-6">
         <p class="text-sm">{{ __('The checks couldn’t run just now. Try again in a minute; the error is in the Laravel log.') }}</p>
@@ -49,9 +51,9 @@
 
 @includeWhen($activity, 'porro::v5.activity')
 
-@unless ($connected)
+@if ($connect['upsell'])
     <h2 class="mb-2 font-bold">{{ __('Watch this site from outside too') }}</h2>
     <div class="card mb-6">
         @include('porro::partials.upsell')
     </div>
-@endunless
+@endif
