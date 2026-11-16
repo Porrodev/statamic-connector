@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  php:
+    uses: 1994limited/coding-standard/.github/workflows/php.yml@v1
+    with:
+      quality-php: '8.4'
+      extensions: sodium, pdo_sqlite, gd, exif
+      # Laravel 10 and 11 are past security support, so Composer blocks them
+      # by default ("insecure"). The connector still supports them: those are
+      # the sites Porro flags. Laravel 10's testbench needs Pest 2.
+      matrix: |
+        [
+          {"php": "8.2", "require": "laravel/framework:10.* orchestra/testbench:8.* statamic/cms:5.* pestphp/pest:2.*", "insecure": true},
+          {"php": "8.3", "require": "laravel/framework:10.* orchestra/testbench:8.* statamic/cms:5.* pestphp/pest:2.*", "insecure": true},
+          {"php": "8.2", "require": "laravel/framework:11.* orchestra/testbench:9.* statamic/cms:5.*", "insecure": true},
+          {"php": "8.4", "require": "laravel/framework:11.* orchestra/testbench:9.* statamic/cms:5.*", "insecure": true},
+          {"php": "8.3", "require": "laravel/framework:12.* orchestra/testbench:10.* statamic/cms:5.*"},
+          {"php": "8.4", "require": "laravel/framework:12.* orchestra/testbench:10.* statamic/cms:6.*"},
+          {"php": "8.4", "require": "laravel/framework:13.* orchestra/testbench:11.* statamic/cms:6.*"},
+          {"php": "8.5", "require": "laravel/framework:13.* orchestra/testbench:11.* statamic/cms:6.*"}
+        ]
