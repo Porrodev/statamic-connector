@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.1 - 2026-11-16
 
 - The **Connect to Porro** button is near-white in the control panel's dark mode. It was black on a dark card and easy to miss.
 
