@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Porro\Core\SiteKey;
+use Porro\Laravel\SiteKeys;
 use Porro\Statamic\SignIn;
 use Statamic\Contracts\Auth\User as UserContract;
 use Statamic\Facades\User;
@@ -75,7 +76,8 @@ class SignInController extends Controller
         }
 
         try {
-            $key = SiteKey::parse((string) config('porro.key'));
+            // From the environment, or made by Connect to Porro in the panel.
+            $key = SiteKey::parse((string) app(SiteKeys::class)->token());
         } catch (InvalidArgumentException) {
             return $this->page('not_connected', 403);
         }
