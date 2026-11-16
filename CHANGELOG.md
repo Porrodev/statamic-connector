@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 - 2026-11-16
 
 - **Disconnect from Porro in the control panel.** A site connected with the **Connect to Porro** button now has a **Disconnect** button beside **Open in Porro**, for super admins and roles with **Connect the site to Porro**. It asks first, and says what stops and what carries on. Disconnecting tells Porro, stops the reports and deletes the key from the site's database. The checks on Site Health still run, and Porro keeps the site and its history until someone removes it there. If Porro can't be reached the key is deleted all the same, and Site Health says Porro hasn't been told. You can connect again at any time.
 - `php please porro:disconnect` does the same from the terminal. `--force` skips the question.
